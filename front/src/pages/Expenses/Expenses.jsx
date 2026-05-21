@@ -426,10 +426,10 @@ function bankAccountAllowedCurrencies(acc) {
   }
   const kind = String(acc.treasury_account_kind || 'bank')
   if (kind === 'cash_wallet') {
-    const w = acc.cash_wallet_kind
-    if (w === 'nsp' || w === 'vodafone') return ['EGP']
-    if (w === 'physical') return ['EGP', 'USD', 'EUR']
-    return ['EGP']
+    const raw = acc.supported_currencies
+    if (Array.isArray(raw) && raw.length) {
+      return [...new Set(raw.map((c) => String(c).toUpperCase().trim()).filter((c) => c.length === 3))]
+    }
   }
   const raw = acc.supported_currencies
   if (!Array.isArray(raw)) return []

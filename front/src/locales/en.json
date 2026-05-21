@@ -4454,7 +4454,8 @@
       "system": "System & Notifications",
       "sessions": "Session Management",
       "activity": "Activity History",
-      "bankAccounts": "Bank Accounts & Treasury Accounts",
+      "bankAccounts": "Bank Accounts",
+      "operationalTreasury": "Operational Treasury Accounts",
       "statuses": "Content (Ports & Statuses)"
     },
     "contentMgmt": {
@@ -4799,7 +4800,7 @@
       }
     },
     "bankAccounts": {
-      "cardTitle": "Bank Accounts & Operational Treasury Accounts",
+      "cardTitle": "Bank Accounts",
       "sectionBanks": "Bank accounts",
       "subtitle": "Manage bank accounts used in payments and treasury.",
       "addTitle": "Add bank account",
@@ -4837,31 +4838,50 @@
     },
     "cashWallets": {
       "cardTitle": "Operational Treasury Accounts",
-      "subtitle": "Operational treasury accounts (NSP, Vodafone Cash, Cash Treasury). They participate in the treasury ledger exactly like bank accounts.",
+      "subtitle": "Configure cash boxes, mobile wallets, and other operational treasury accounts. Balances come from treasury movements.",
       "addTitle": "Add treasury account",
       "editTitle": "Edit treasury account",
-      "name": "Account name",
-      "accountName": "Display name",
+      "nameAr": "Name (Arabic)",
+      "nameEn": "Name (English)",
+      "nameRequired": "Enter at least one name in Arabic or English.",
+      "currenciesRequired": "Select at least one supported currency.",
       "kind": "Account type",
+      "kindCashBox": "Cash box",
+      "kindCashTreasury": "Cash treasury",
       "kindNsp": "NSP",
       "kindVodafone": "Vodafone Cash",
-      "kindPhysical": "Cash Treasury",
-      "kindLocked": "Account type cannot be changed after creation — it pins the currency rules and ledger identity.",
-      "currencies": "Currencies",
-      "currenciesAuto": "Determined by account type (NSP & Vodafone: EGP only; Cash Treasury: EGP + USD + EUR).",
+      "kindInstapay": "Instapay",
+      "kindPettyCash": "Petty cash",
+      "kindMobileWallet": "Mobile wallet",
+      "kindOther": "Other",
+      "kindLocked": "Account type cannot be changed after creation.",
+      "currencies": "Supported currencies",
+      "currenciesHint": "Select one or more currencies for ledger movements on this account.",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional internal notes",
+      "balance": "Current balance",
+      "balanceEmpty": "No movements yet",
       "status": "Active",
       "active": "Active",
       "inactive": "Inactive",
+      "empty": "No operational treasury accounts yet. Add one to use it on the Treasury page.",
       "save": "Save",
       "cancel": "Cancel",
       "edit": "Edit",
+      "delete": "Delete",
       "created": "Treasury account created.",
       "updated": "Treasury account updated.",
-      "duplicateKind": "A treasury account of this type already exists.",
+      "deleted": "Treasury account deleted.",
+      "deleteTitle": "Delete treasury account",
+      "deleteConfirm": "Delete this operational treasury account? This cannot be undone.",
+      "duplicateKind": "An account with this name already exists.",
       "table": {
-        "name": "Account name",
+        "nameAr": "Name (AR)",
+        "nameEn": "Name (EN)",
         "kind": "Type",
         "currencies": "Currencies",
+        "balance": "Balance",
+        "notes": "Notes",
         "status": "Status",
         "actions": "Actions"
       }
@@ -4897,7 +4917,8 @@
       "saveBankAccount": "Failed to save bank account.",
       "deleteBankAccount": "Failed to delete bank account.",
       "loadCashWallets": "Failed to load operational treasury accounts.",
-      "saveCashWallet": "Failed to save operational treasury account."
+      "saveCashWallet": "Failed to save operational treasury account.",
+      "deleteCashWallet": "Failed to delete operational treasury account."
     }
   }
 }

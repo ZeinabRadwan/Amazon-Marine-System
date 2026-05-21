@@ -63,8 +63,17 @@ import {
 } from '../../api/accountings'
 import {
   listCashWallets,
+  createCashWallet,
   updateCashWallet,
+  deleteCashWallet,
 } from '../../api/cashWallets'
+import {
+  EMPTY_CASH_WALLET_FORM,
+  OPERATIONAL_ACCOUNT_TYPES,
+  formatOperationalBalanceSummary,
+  normalizeOperationalAccountType,
+  operationalAccountTypeLabel,
+} from './operationalTreasuryHelpers'
 import '../../components/PageHeader/PageHeader.css'
 import '../../components/LoaderDots/LoaderDots.css'
 import '../../components/Tabs/Tabs.css'
@@ -237,6 +246,7 @@ const SETTINGS_TABS = [
   { id: 'sessions', labelKey: 'settings.tabs.sessions' },
   { id: 'activity', labelKey: 'settings.tabs.activity' },
   { id: 'bankAccounts', labelKey: 'settings.tabs.bankAccounts' },
+  { id: 'operationalTreasury', labelKey: 'settings.tabs.operationalTreasury' },
   { id: 'statuses', labelKey: 'settings.tabs.statuses' },
 ]
 
@@ -396,11 +406,10 @@ export default function Settings() {
   // currencies are auto-derived from the kind, and the active flag toggles availability.
   const [cashWallets, setCashWallets] = useState([])
   const [cashWalletModal, setCashWalletModal] = useState(null)
-  const [cashWalletForm, setCashWalletForm] = useState({
-    bank_name: '',
-    is_active: true,
-  })
+  const [cashWalletForm, setCashWalletForm] = useState({ ...EMPTY_CASH_WALLET_FORM })
   const [cashWalletSubmitting, setCashWalletSubmitting] = useState(false)
+  const [deleteCashWalletId, setDeleteCashWalletId] = useState(null)
+  const [deleteCashWalletSubmitting, setDeleteCashWalletSubmitting] = useState(false)
 
   const [statusesTabLoading, setStatusesTabLoading] = useState(false)
   const [contentMgmtSection, setContentMgmtSection] = useState('ports')
@@ -587,7 +596,6 @@ export default function Settings() {
           listShipmentStatuses(token).catch(() => ({ data: [] })),
           // Settings → Banks table is banks-only; cash wallets live in their own section.
           listBankAccounts(token, { kind: 'bank' }).catch(() => ({ data: [] })),
-          // Cash wallets are auto-seeded on read by the backend, so the empty state never shows.
           listCashWallets(token).catch(() => ({ data: [] })),
         ])
 
@@ -654,6 +662,11 @@ export default function Settings() {
     load()
     return () => { cancelled = true }
   }, [token, t])
+
+  useEffect(() => {
+    if (!token || activeTab !== 'operationalTreasury') return
+    refreshCashWallets()
+  }, [token, activeTab])
 
   async function handleSaveCompanyProfile(e) {
     e.preventDefault()
@@ -1367,46 +1380,100 @@ export default function Settings() {
     }
   }
 
+  function openNewCashWallet() {
+    setCashWalletForm({ ...EMPTY_CASH_WALLET_FORM })
+    setCashWalletModal({ mode: 'create' })
+  }
+
   function openEditCashWallet(row) {
     setCashWalletForm({
-      bank_name: row.name ?? row.bank_name ?? '',
-      is_active: row.is_active !== false,
-    })
-    // Modal carries the wallet's identity + the read-only currency list so the form
-    // can render currency badges without having to keep a hot reference to the row.
-    setCashWalletModal({
-      mode: 'edit',
-      id: row.id,
-      kind: row.cash_wallet_kind,
-      currencies: Array.isArray(row.allowed_currencies) && row.allowed_currencies.length
-        ? row.allowed_currencies
-        : Array.isArray(row.supported_currencies)
-          ? row.supported_currencies
+      name_ar: row.name_ar ?? '',
+      name_en: row.name_en ?? row.name ?? row.bank_name ?? '',
+      cash_wallet_kind: normalizeOperationalAccountType(row.account_type ?? row.cash_wallet_kind) || 'cash_box',
+      supported_currencies: Array.isArray(row.supported_currencies)
+        ? row.supported_currencies.map((c) => String(c).toUpperCase())
+        : Array.isArray(row.allowed_currencies)
+          ? row.allowed_currencies.map((c) => String(c).toUpperCase())
           : [],
+      is_active: row.is_active !== false,
+      notes: row.notes ?? '',
+    })
+    setCashWalletModal({ mode: 'edit', id: row.id })
+  }
+
+  function toggleCashWalletCurrency(code) {
+    const upper = String(code).toUpperCase()
+    setCashWalletForm((p) => {
+      const list = Array.isArray(p.supported_currencies) ? [...p.supported_currencies] : []
+      const normalized = list.map((c) => String(c).trim().toUpperCase()).filter(Boolean)
+      const idx = normalized.indexOf(upper)
+      if (idx >= 0) normalized.splice(idx, 1)
+      else normalized.push(upper)
+      return { ...p, supported_currencies: normalized }
     })
   }
 
   async function handleSaveCashWallet(e) {
     e.preventDefault()
-    if (!token || cashWalletModal?.mode !== 'edit' || cashWalletModal.id == null) return
-    if (!String(cashWalletForm.bank_name).trim()) return
+    if (!token || !cashWalletModal) return
+    const nameAr = String(cashWalletForm.name_ar || '').trim()
+    const nameEn = String(cashWalletForm.name_en || '').trim()
+    if (!nameAr && !nameEn) {
+      setError(t('settings.cashWallets.nameRequired'))
+      return
+    }
+    const currencies = (cashWalletForm.supported_currencies || [])
+      .map((c) => String(c).trim().toUpperCase())
+      .filter(Boolean)
+    if (!currencies.length) {
+      setError(t('settings.cashWallets.currenciesRequired'))
+      return
+    }
+    const isEdit = cashWalletModal.mode === 'edit' && cashWalletModal.id != null
     setCashWalletSubmitting(true)
     setError('')
     try {
-      // Treasury wallets accept only `bank_name` + `is_active` from the UI; the server
-      // mirrors `account_name` from `bank_name` and locks `cash_wallet_kind` + currencies.
       const body = {
-        bank_name: String(cashWalletForm.bank_name).trim(),
+        name_ar: nameAr || null,
+        name_en: nameEn || null,
+        supported_currencies: currencies,
         is_active: Boolean(cashWalletForm.is_active),
+        notes: String(cashWalletForm.notes || '').trim() || null,
       }
-      await updateCashWallet(token, cashWalletModal.id, body)
+      if (isEdit) {
+        await updateCashWallet(token, cashWalletModal.id, body)
+      } else {
+        await createCashWallet(token, {
+          ...body,
+          cash_wallet_kind: cashWalletForm.cash_wallet_kind,
+        })
+      }
       await refreshCashWallets()
       setCashWalletModal(null)
-      setAlert({ type: 'success', message: t('settings.cashWallets.updated') })
+      setAlert({
+        type: 'success',
+        message: isEdit ? t('settings.cashWallets.updated') : t('settings.cashWallets.created'),
+      })
     } catch (err) {
       setError(err.message || t('settings.errors.saveCashWallet'))
     } finally {
       setCashWalletSubmitting(false)
+    }
+  }
+
+  async function handleDeleteCashWalletConfirm() {
+    if (!token || deleteCashWalletId == null) return
+    setDeleteCashWalletSubmitting(true)
+    setError('')
+    try {
+      await deleteCashWallet(token, deleteCashWalletId)
+      await refreshCashWallets()
+      setDeleteCashWalletId(null)
+      setAlert({ type: 'success', message: t('settings.cashWallets.deleted') })
+    } catch (err) {
+      setError(err.message || t('settings.errors.deleteCashWallet'))
+    } finally {
+      setDeleteCashWalletSubmitting(false)
     }
   }
 
@@ -2032,31 +2099,33 @@ export default function Settings() {
     },
   ]
 
-  const cashWalletKindLabel = (kind) => {
-    switch (String(kind || '').toLowerCase()) {
-      case 'nsp':
-        return t('settings.cashWallets.kindNsp')
-      case 'vodafone':
-        return t('settings.cashWallets.kindVodafone')
-      case 'physical':
-        return t('settings.cashWallets.kindPhysical')
-      default:
-        return kind || '—'
-    }
-  }
+  const renderActiveStatusBadge = (active) => (
+    <span
+      className="settings-status-badge"
+      style={{ backgroundColor: active ? '#16a34a' : '#94a3b8' }}
+    >
+      {active ? t('settings.cashWallets.active') : t('settings.cashWallets.inactive')}
+    </span>
+  )
 
   const cashWalletColumns = [
     {
-      key: 'name',
-      label: t('settings.cashWallets.table.name'),
+      key: 'name_ar',
+      label: t('settings.cashWallets.table.nameAr'),
       sortable: false,
-      render: (val, row) => val ?? row.bank_name ?? '—',
+      render: (val) => val || '—',
+    },
+    {
+      key: 'name_en',
+      label: t('settings.cashWallets.table.nameEn'),
+      sortable: false,
+      render: (val, row) => val || row.name || row.bank_name || '—',
     },
     {
       key: 'cash_wallet_kind',
       label: t('settings.cashWallets.table.kind'),
       sortable: false,
-      render: (val) => cashWalletKindLabel(val),
+      render: (val, row) => operationalAccountTypeLabel(val ?? row.account_type, t),
     },
     {
       key: 'allowed_currencies',
@@ -2087,10 +2156,22 @@ export default function Settings() {
       },
     },
     {
+      key: 'balance_by_currency',
+      label: t('settings.cashWallets.table.balance'),
+      sortable: false,
+      render: (val) => formatOperationalBalanceSummary(val) ?? t('settings.cashWallets.balanceEmpty'),
+    },
+    {
+      key: 'notes',
+      label: t('settings.cashWallets.table.notes'),
+      sortable: false,
+      render: (val) => (val ? String(val).slice(0, 80) : '—'),
+    },
+    {
       key: 'is_active',
       label: t('settings.cashWallets.table.status'),
       sortable: false,
-      render: (val) => (val ? t('settings.cashWallets.active') : t('settings.cashWallets.inactive')),
+      render: (val) => renderActiveStatusBadge(val !== false),
     },
     {
       key: 'actions',
@@ -2102,6 +2183,12 @@ export default function Settings() {
             icon={<Pencil className="h-4 w-4" />}
             label={t('settings.cashWallets.edit')}
             onClick={() => openEditCashWallet(row)}
+          />
+          <IconActionButton
+            icon={<Trash2 className="h-4 w-4" />}
+            label={t('settings.cashWallets.delete')}
+            variant="danger"
+            onClick={() => setDeleteCashWalletId(row.id)}
           />
         </div>
       ),
@@ -2506,11 +2593,10 @@ export default function Settings() {
               )}
             </div>
 
-            {/* Tab: Bank Accounts & Cash Wallets — two independent sections in one tab. */}
+            {/* Tab: Bank Accounts */}
             <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'bankAccounts' ? 'cs-tab-panel--active' : ''}`}>
               {activeTab === 'bankAccounts' && (
                 <div className="settings-tab-content settings-tab-content--animate">
-                  {/* Section 1 — bank accounts (CRUD-able, banks-only via ?kind=bank). */}
                   <SectionCard
                     title={t('settings.bankAccounts.sectionBanks')}
                     subtitle={t('settings.bankAccounts.subtitle')}
@@ -2524,15 +2610,30 @@ export default function Settings() {
                       <Table columns={bankAccountColumns} data={bankAccounts} getRowKey={(r) => r.id} emptyMessage={t('settings.bankAccounts.empty')} />
                     </div>
                   </SectionCard>
+                </div>
+              )}
+            </div>
 
-                  {/* Section 2 — cash wallets (NSP / Vodafone Cash / Cash Treasury). */}
-                  {/* Backend auto-seeds these on every read, so the table is always populated. */}
+            {/* Tab: Operational Treasury Accounts */}
+            <div role="tabpanel" className={`cs-tab-panel settings-tab-panel ${activeTab === 'operationalTreasury' ? 'cs-tab-panel--active' : ''}`}>
+              {activeTab === 'operationalTreasury' && (
+                <div className="settings-tab-content settings-tab-content--animate">
                   <SectionCard
                     title={t('settings.cashWallets.cardTitle')}
                     subtitle={t('settings.cashWallets.subtitle')}
+                    actions={
+                      <button type="button" className="page-header__btn page-header__btn--primary" onClick={openNewCashWallet}>
+                        {t('settings.cashWallets.addTitle')}
+                      </button>
+                    }
                   >
                     <div className="settings-table-card">
-                      <Table columns={cashWalletColumns} data={cashWallets} getRowKey={(r) => r.id} />
+                      <Table
+                        columns={cashWalletColumns}
+                        data={cashWallets}
+                        getRowKey={(r) => r.id}
+                        emptyMessage={t('settings.cashWallets.empty')}
+                      />
                     </div>
                   </SectionCard>
                 </div>
@@ -3414,9 +3515,9 @@ export default function Settings() {
           />
         ) : null}
 
-        {cashWalletModal?.mode === 'edit' ? (
+        {cashWalletModal ? (
           <SettingsFormModal
-            title={t('settings.cashWallets.editTitle')}
+            title={cashWalletModal.mode === 'edit' ? t('settings.cashWallets.editTitle') : t('settings.cashWallets.addTitle')}
             titleId="settings-cash-wallet-modal-title"
             onClose={() => setCashWalletModal(null)}
             submitting={cashWalletSubmitting}
@@ -3424,47 +3525,78 @@ export default function Settings() {
             primaryLabel={t('settings.cashWallets.save')}
             cancelLabel={t('settings.cashWallets.cancel')}
           >
-            <SettingsModalField label={t('settings.cashWallets.kind')} htmlFor="settings-cash-wallet-kind">
+            <SettingsModalField label={t('settings.cashWallets.nameAr')} htmlFor="settings-cash-wallet-name-ar">
               <input
-                id="settings-cash-wallet-kind"
+                id="settings-cash-wallet-name-ar"
                 className="clients-input"
-                value={cashWalletKindLabel(cashWalletModal.kind)}
-                disabled
-                readOnly
+                value={cashWalletForm.name_ar}
+                onChange={(e) => setCashWalletForm((p) => ({ ...p, name_ar: e.target.value }))}
               />
-              <p className="settings-bank-currency-picker__hint">{t('settings.cashWallets.kindLocked')}</p>
             </SettingsModalField>
-            <SettingsModalField label={t('settings.cashWallets.name')} htmlFor="settings-cash-wallet-name">
+            <SettingsModalField label={t('settings.cashWallets.nameEn')} htmlFor="settings-cash-wallet-name-en">
               <input
-                id="settings-cash-wallet-name"
+                id="settings-cash-wallet-name-en"
                 className="clients-input"
-                required
-                value={cashWalletForm.bank_name}
-                onChange={(e) => setCashWalletForm((p) => ({ ...p, bank_name: e.target.value }))}
+                value={cashWalletForm.name_en}
+                onChange={(e) => setCashWalletForm((p) => ({ ...p, name_en: e.target.value }))}
               />
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.cashWallets.kind')} htmlFor="settings-cash-wallet-kind">
+              {cashWalletModal.mode === 'create' ? (
+                <select
+                  id="settings-cash-wallet-kind"
+                  className="clients-input"
+                  value={cashWalletForm.cash_wallet_kind}
+                  onChange={(e) => setCashWalletForm((p) => ({ ...p, cash_wallet_kind: e.target.value }))}
+                >
+                  {OPERATIONAL_ACCOUNT_TYPES.map((typeId) => (
+                    <option key={typeId} value={typeId}>
+                      {operationalAccountTypeLabel(typeId, t)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <>
+                  <input
+                    id="settings-cash-wallet-kind"
+                    className="clients-input"
+                    value={operationalAccountTypeLabel(cashWalletForm.cash_wallet_kind, t)}
+                    disabled
+                    readOnly
+                  />
+                  <p className="settings-bank-currency-picker__hint">{t('settings.cashWallets.kindLocked')}</p>
+                </>
+              )}
             </SettingsModalField>
             <SettingsModalField label={t('settings.cashWallets.currencies')} htmlFor="settings-cash-wallet-currencies">
-              <div
-                id="settings-cash-wallet-currencies"
-                className="settings-bank-currency-badges settings-bank-currency-badges--inline"
-                role="list"
-                aria-label={t('settings.cashWallets.currencies')}
-              >
-                {(Array.isArray(cashWalletModal.currencies) ? cashWalletModal.currencies : []).map((c) => {
-                  const code = String(c).toUpperCase()
+              <div id="settings-cash-wallet-currencies" className="settings-bank-currency-picker" role="group" aria-label={t('settings.cashWallets.currencies')}>
+                {['EGP', 'USD', 'EUR'].map((code) => {
+                  const selected = (cashWalletForm.supported_currencies || []).map((c) => String(c).toUpperCase()).includes(code)
                   const v = settingsBankCurrencyVariant(code)
                   return (
-                    <span
+                    <button
                       key={code}
-                      role="listitem"
-                      className={`settings-bank-currency-badge settings-bank-currency-badge--${v} settings-bank-currency-badge--readonly`}
+                      type="button"
+                      className={`settings-bank-currency-badge settings-bank-currency-badge--${v}${selected ? ' settings-bank-currency-badge--selected' : ''}`}
+                      aria-pressed={selected}
+                      onClick={() => toggleCashWalletCurrency(code)}
                     >
                       {code}
-                    </span>
+                    </button>
                   )
                 })}
               </div>
-              <p className="settings-bank-currency-picker__hint">{t('settings.cashWallets.currenciesAuto')}</p>
+              <p className="settings-bank-currency-picker__hint">{t('settings.cashWallets.currenciesHint')}</p>
+            </SettingsModalField>
+            <SettingsModalField label={t('settings.cashWallets.notes')} htmlFor="settings-cash-wallet-notes">
+              <textarea
+                id="settings-cash-wallet-notes"
+                className="clients-input"
+                rows={3}
+                placeholder={t('settings.cashWallets.notesPlaceholder')}
+                value={cashWalletForm.notes}
+                onChange={(e) => setCashWalletForm((p) => ({ ...p, notes: e.target.value }))}
+              />
             </SettingsModalField>
             <div className="client-detail-modal__form-field client-detail-modal__form-field--full settings-modal-checkbox-field">
               <label htmlFor="settings-cash-wallet-active" className="settings-modal-checkbox-field__label">
@@ -3479,6 +3611,17 @@ export default function Settings() {
               />
             </div>
           </SettingsFormModal>
+        ) : null}
+
+        {deleteCashWalletId != null ? (
+          <SettingsConfirmModal
+            title={t('settings.cashWallets.deleteTitle')}
+            message={t('settings.cashWallets.deleteConfirm')}
+            onClose={() => setDeleteCashWalletId(null)}
+            onConfirm={handleDeleteCashWalletConfirm}
+            submitting={deleteCashWalletSubmitting}
+            danger
+          />
         ) : null}
       </div>
     </Container>

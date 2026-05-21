@@ -813,15 +813,11 @@ export default function Treasury() {
                           {t('treasury.cashWallet.kicker')}
                         </span>
                         <span className="treasury-acc-headline">
-                          <span className="treasury-acc-name">{box.bank_name}</span>
-                          {box.account_name ? (
-                            <>
-                              <span className="treasury-acc-sep" aria-hidden>
-                                {' / '}
-                              </span>
-                              <span className="treasury-acc-name">{box.account_name}</span>
-                            </>
-                          ) : null}
+                          <span className="treasury-acc-name">
+                            {i18n.language === 'ar'
+                              ? box.name_ar || box.name_en || box.display_name || box.bank_name
+                              : box.name_en || box.name_ar || box.display_name || box.bank_name}
+                          </span>
                         </span>
                       </div>
                       {box.account_number || box.iban ? (
@@ -832,7 +828,9 @@ export default function Treasury() {
                   </button>
                 )
               })
-            ) : null /* Operational treasury accounts are auto-seeded server-side; this branch should never hit. */}
+            ) : (
+              <p className="treasury-muted treasury-accounts-grid__empty">{t('treasury.bankOverview.noCashWalletsSection')}</p>
+            )}
           </div>
         </>
       )}

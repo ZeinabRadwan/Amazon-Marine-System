@@ -17,7 +17,6 @@ use App\Services\TreasuryAccountCurrencyService;
 use App\Services\TreasuryJournalPostingService;
 use App\Services\TreasuryLedgerBalanceService;
 use App\Services\TreasuryOfficialFxRateService;
-use Database\Seeders\TreasuryCashWalletsSeeder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -226,11 +225,6 @@ class TreasuryController extends Controller
             __('You do not have permission to view treasury bank overview.')
         );
 
-        // Auto-seed the three canonical cash wallets (NSP / Vodafone Cash / Cash Treasury)
-        // so the Treasury page never renders the "no wallets yet" empty state, even on a
-        // fresh install where the seeder hasn't been explicitly run.
-        TreasuryCashWalletsSeeder::ensureSeeded();
-
         $banks = BankAccount::query()
             ->where('is_active', true)
             ->orderBy('bank_name')
@@ -299,11 +293,16 @@ class TreasuryController extends Controller
                 'id' => $bank->id,
                 'bank_name' => $bank->bank_name,
                 'account_name' => $bank->account_name,
+                'name_ar' => $bank->name_ar,
+                'name_en' => $bank->name_en,
+                'display_name' => $bank->primaryDisplayName(),
                 'account_number' => $bank->account_number,
                 'iban' => $bank->iban ?? null,
                 'supported_currencies' => is_array($bank->supported_currencies) ? $bank->supported_currencies : [],
                 'treasury_account_kind' => $kind,
                 'cash_wallet_kind' => $bank->cash_wallet_kind,
+                'account_type' => BankAccount::normalizeOperationalAccountType($bank->cash_wallet_kind),
+                'notes' => $bank->notes,
                 'allowed_currencies' => $bank->allowedTreasuryCurrencyCodes(),
                 'balance_by_currency' => $this->roundMoneyMap($balanceDisplay),
                 'customer_in_by_currency' => $this->roundMoneyMap($customerIn),

@@ -509,13 +509,12 @@ Route::prefix('v1')->group(function () {
         Route::put('bank-accounts/{bankAccount}', [BankAccountController::class, 'update']);
         Route::delete('bank-accounts/{bankAccount}', [BankAccountController::class, 'destroy']);
 
-        // Cash wallets — first-class operational treasury wallets (NSP / Vodafone Cash / Cash Treasury).
-        // Auto-seeded on read so the UI never shows "no wallets yet". Shares the underlying ledger
-        // FK with bank_accounts so wallets behave identically to banks in treasury entries.
+        // Operational treasury accounts — dynamic CRUD (Settings + Treasury ledger).
         Route::get('cash-wallets', [CashWalletController::class, 'index']);
         Route::post('cash-wallets', [CashWalletController::class, 'store']);
         Route::get('cash-wallets/{cashWallet}', [CashWalletController::class, 'show']);
         Route::match(['put', 'patch'], 'cash-wallets/{cashWallet}', [CashWalletController::class, 'update']);
+        Route::delete('cash-wallets/{cashWallet}', [CashWalletController::class, 'destroy']);
 
         // Record payment
         Route::get('payments', [PaymentController::class, 'index']);

@@ -30,7 +30,6 @@ class DatabaseSeeder extends Seeder
             ShippingLineSeeder::class,
             SDFormLookupsSeeder::class,
             PricingFreightUnitTypesSeeder::class,
-            TreasuryCashWalletsSeeder::class,
         ]);
     }
 }

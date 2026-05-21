@@ -1,8 +1,5 @@
 /**
- * Cash wallets API — operational treasury wallets (NSP / Vodafone Cash / Cash Treasury).
- * Backed by the same `bank_accounts` table as banks but exposed as a dedicated resource so
- * the Settings module can treat them as an independent entity. The backend auto-seeds the
- * three canonical wallets on every read, so the list is never empty.
+ * Operational treasury accounts API — dynamic accounts configured in Settings.
  */
 
 import { getApiBaseUrl } from './apiBaseUrl'
@@ -38,11 +35,13 @@ export async function getCashWallet(token, id) {
  *
  * @param {string} token
  * @param {{
- *   bank_name: string,
- *   account_name?: string | null,
- *   cash_wallet_kind: 'nsp' | 'vodafone' | 'physical',
- *   supported_currencies?: string[],
+ *   name_ar?: string | null,
+ *   name_en?: string | null,
+ *   cash_wallet_kind: string,
+ *   account_type?: string,
+ *   supported_currencies: string[],
  *   is_active?: boolean,
+ *   notes?: string | null,
  * }} body
  */
 export async function createCashWallet(token, body) {
@@ -59,12 +58,15 @@ export async function createCashWallet(token, body) {
 /**
  * PATCH {{base_url}}/cash-wallets/{id}
  *
- * Only `bank_name`, `account_name`, and `is_active` may change after creation. The
- * `cash_wallet_kind` is intentionally locked because it pins currency rules and ledger identity.
- *
  * @param {string} token
  * @param {number|string} id
- * @param {{ bank_name?: string, account_name?: string | null, is_active?: boolean }} body
+ * @param {{
+ *   name_ar?: string | null,
+ *   name_en?: string | null,
+ *   supported_currencies?: string[],
+ *   is_active?: boolean,
+ *   notes?: string | null,
+ * }} body
  */
 export async function updateCashWallet(token, id, body) {
   const res = await apiFetch(`${getBaseUrl()}/cash-wallets/${id}`, {
@@ -74,5 +76,16 @@ export async function updateCashWallet(token, id, body) {
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message || data.error || `Failed to update cash wallet (${res.status})`)
+  return data
+}
+
+/** DELETE {{base_url}}/cash-wallets/{id} */
+export async function deleteCashWallet(token, id) {
+  const res = await apiFetch(`${getBaseUrl()}/cash-wallets/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || data.error || `Failed to delete cash wallet (${res.status})`)
   return data
 }

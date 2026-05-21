@@ -37,9 +37,6 @@ class BankAccountController extends Controller
         abort_unless($request->user()?->can('accounting.manage'), 403);
         $validated = $request->validate([
             'bank_name' => ['required', 'string', 'max:255'],
-            // `account_name` is optional from the UI — Settings only collects bank-identity
-            // fields (bank name, account #, IBAN, SWIFT, currencies). When omitted we
-            // mirror the bank name so the legacy column stays populated for reports/dropdowns.
             'account_name' => ['nullable', 'string', 'max:255'],
             'account_number' => ['nullable', 'string', 'max:120'],
             'iban' => ['nullable', 'string', 'max:120'],
@@ -47,17 +44,12 @@ class BankAccountController extends Controller
             'supported_currencies' => ['nullable', 'array'],
             'supported_currencies.*' => ['string', 'size:3'],
             'is_active' => ['nullable', 'boolean'],
-            'treasury_account_kind' => ['nullable', 'string', 'in:bank,cash_wallet'],
-            'cash_wallet_kind' => [
-                'nullable',
-                'string',
-                'in:nsp,vodafone,physical',
-                Rule::requiredIf(static fn () => ($request->input('treasury_account_kind') ?? BankAccount::TREASURY_KIND_BANK) === BankAccount::TREASURY_KIND_CASH_WALLET),
-            ],
         ]);
 
         $accountName = trim((string) ($validated['account_name'] ?? ''));
         $validated['account_name'] = $accountName !== '' ? $accountName : $validated['bank_name'];
+        $validated['treasury_account_kind'] = BankAccount::TREASURY_KIND_BANK;
+        $validated['cash_wallet_kind'] = null;
 
         $account = BankAccount::query()->create($validated);
 
