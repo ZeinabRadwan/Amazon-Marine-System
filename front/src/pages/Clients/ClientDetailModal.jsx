@@ -171,11 +171,12 @@ function buildFollowUpPayload(form, t) {
         error: t('clients.followUpNextRequired', 'Scheduled follow-up date & time is required.'),
       }
     }
+    const notes = String(form.notes ?? '').trim()
     const base = {
       channel: 'phone',
       followup_type: 'other',
       occurred_at: normalizeDateTimeForApi(defaultLocalDateTime()),
-      summary: undefined,
+      summary: notes || undefined,
       next_follow_up_at: nextNorm,
     }
     return appendFollowUpReminderFields(base, form, t)
@@ -684,17 +685,6 @@ export default function ClientDetailModal({
                       {t('clients.followUpModeSchedule', 'Schedule reminder')}
                     </button>
                   </div>
-                  <p className="client-detail-modal__followup-mode-hint">
-                    {followUpForm.form_mode === 'schedule'
-                      ? t(
-                          'clients.followUpModeScheduleHelp',
-                          'Create a future follow-up task without logging a completed interaction first.',
-                        )
-                      : t(
-                          'clients.followUpModeLogHelp',
-                          'Log a completed follow-up and optionally schedule the next one.',
-                        )}
-                  </p>
                   <div className="client-detail-modal__form-grid client-detail-modal__grid--card client-detail-modal__followup-form" style={{ marginBottom: 16 }}>
                   {followUpForm.form_mode === 'log' ? (
                     <>
@@ -776,6 +766,22 @@ export default function ClientDetailModal({
                         locale={i18n.language}
                         className="client-detail-modal__datetime-input"
                         placeholder={t('clients.followUpPickDateTime', 'Select date and time')}
+                      />
+                    </div>
+                  ) : null}
+                  {followUpForm.form_mode === 'schedule' ? (
+                    <div className="client-detail-modal__form-field client-detail-modal__form-field--full">
+                      <label htmlFor="followup-schedule-notes">{t('clients.followUpScheduleNotes', 'Notes (optional)')}</label>
+                      <textarea
+                        id="followup-schedule-notes"
+                        value={followUpForm.notes}
+                        onChange={(e) => {
+                          setFollowUpValidationError('')
+                          setFollowUpForm((prev) => ({ ...prev, notes: e.target.value }))
+                        }}
+                        disabled={followUpSubmitting}
+                        rows={3}
+                        placeholder={t('clients.followUpScheduleNotesPlaceholder', 'e.g. Re-contact after inactivity')}
                       />
                     </div>
                   ) : null}

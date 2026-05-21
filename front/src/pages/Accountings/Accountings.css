@@ -592,6 +592,42 @@
   font-size: 13px;
 }
 
+.accountings-btn--icon {
+  padding: 0;
+  justify-content: center;
+}
+
+.accountings-statement-toolbar__search {
+  flex: 0 1 220px;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.accountings-statement-toolbar__actions {
+  margin-inline-start: auto;
+}
+
+.cash-receipt-history {
+  background: var(--form-bg, #fff);
+  border: 1px solid var(--form-divider, #e5e7eb);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.cash-receipt-history__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.cash-receipt-history__head h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .accountings-btn--danger {
   color: var(--form-error-text, #b91c1c);
   border-color: var(--form-error-text, #b91c1c);
@@ -1921,4 +1957,27 @@ button.accountings-pay-doc-link:disabled {
 
 .accountings-partner-ship-actions {
   justify-content: flex-end;
+}
+
+/* Customer statements — wider Clients-style filter bar */
+.accountings-statement-filters.clients-filters-card {
+  width: 100%;
+  max-width: none;
+}
+
+.accountings-statement-filters .clients-filters__search-wrap {
+  min-width: 220px;
+  max-width: 360px;
+  flex: 1.2;
+}
+
+.accountings-statement-filters .clients-filters__fields {
+  flex: 1;
+}
+
+.accountings-receipts-issue-btn {
+  width: auto !important;
+  min-width: auto;
+  padding-inline: 0.9rem;
+  gap: 0.4rem;
 }

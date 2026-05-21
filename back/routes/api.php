@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\AdminAttendanceController;
 use App\Http\Controllers\Api\V1\AdminNotificationController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\BankAccountController;
+use App\Http\Controllers\Api\V1\CashReceiptController;
 use App\Http\Controllers\Api\V1\CashWalletController;
 use App\Http\Controllers\Api\V1\ClientAttachmentController;
 use App\Http\Controllers\Api\V1\ClientContactController;
@@ -498,6 +499,13 @@ Route::prefix('v1')->group(function () {
         Route::get('accounting/company-statement', [AccountingController::class, 'companyStatement']);
         Route::get('accounting/customer-statements', [AccountingController::class, 'customerStatements']);
         Route::get('accounting/customer-statements/{client}', [AccountingController::class, 'customerStatementDetail']);
+        Route::get('accounting/customer-statements/{client}/receiptable-payments', [CashReceiptController::class, 'receiptablePayments']);
+
+        Route::get('cash-receipts/eligible-customers', [CashReceiptController::class, 'eligibleCustomers']);
+        Route::get('cash-receipts', [CashReceiptController::class, 'index']);
+        Route::post('cash-receipts/preview', [CashReceiptController::class, 'preview']);
+        Route::post('cash-receipts', [CashReceiptController::class, 'store']);
+        Route::get('cash-receipts/{cashReceipt}/pdf', [CashReceiptController::class, 'pdf']);
         Route::get('accounting/partners-ledger', [AccountingController::class, 'partnerLedger']);
         Route::get('accounting/partners-ledger/{vendor}', [AccountingController::class, 'partnerLedgerDetail']);
         Route::get('accounting/clients/export', [AccountingController::class, 'exportClients']);

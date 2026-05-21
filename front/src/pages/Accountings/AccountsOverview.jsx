@@ -10,6 +10,9 @@ import {
   Download,
   Search,
   Wallet,
+  RotateCcw,
+  FileText,
+  Filter,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Tabs from '../../components/Tabs'
@@ -45,6 +48,8 @@ import {
 } from './CurrencyMapBadges'
 import AccountingsPaymentModal from './AccountingsPaymentModal'
 import ClientPaymentModal, { emptyClientPaymentForm } from '../../components/ClientPaymentModal'
+import CashReceiptIssuanceModal from './CashReceiptIssuanceModal'
+import CashReceiptHistoryPanel from './CashReceiptHistoryPanel'
 import {
   EPS,
   bankSupportsCurrency,
@@ -60,7 +65,7 @@ import {
 } from './accountingsStatementShared'
 
 export default function AccountsOverview() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const token = getStoredToken()
   const { isAdminRole, isAccountant } = useAuthAccess()
@@ -77,12 +82,16 @@ export default function AccountsOverview() {
   const [partnerVendorTypes, setPartnerVendorTypes] = useState({})
   /** Vendor payments (partner payables settled). */
   const [vendorPayments, setVendorPayments] = useState([])
+  const [customersSubTab, setCustomersSubTab] = useState('statements')
   const [statementSearch, setStatementSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [appliedStatementSearch, setAppliedStatementSearch] = useState('')
   const [statementDateFrom, setStatementDateFrom] = useState('')
   const [statementDateTo, setStatementDateTo] = useState('')
+  const [appliedStatementDateFrom, setAppliedStatementDateFrom] = useState('')
+  const [appliedStatementDateTo, setAppliedStatementDateTo] = useState('')
   /** paid | partial | unpaid — shared filter */
   const [statementPaymentStatus, setStatementPaymentStatus] = useState('')
+  const [appliedStatementPaymentStatus, setAppliedStatementPaymentStatus] = useState('')
   /** Partner Statement only: shipping | transport | customs | insurance */
   const [partnerTypeFilter, setPartnerTypeFilter] = useState('')
   const [customerPage, setCustomerPage] = useState(1)
@@ -101,6 +110,8 @@ export default function AccountsOverview() {
   const [paymentSubmitError, setPaymentSubmitError] = useState(null)
   const [paymentBusy, setPaymentBusy] = useState(false)
   const [paymentProofFile, setPaymentProofFile] = useState(null)
+  const [cashReceiptOpen, setCashReceiptOpen] = useState(false)
+  const [cashReceiptHistoryKey, setCashReceiptHistoryKey] = useState(0)
   const [payment, setPayment] = useState({
     amount: '',
     currency_code: 'USD',
@@ -116,21 +127,16 @@ export default function AccountsOverview() {
     reference: '',
   })
 
-  useEffect(() => {
-    const id = window.setTimeout(() => setDebouncedSearch(statementSearch.trim()), 400)
-    return () => window.clearTimeout(id)
-  }, [statementSearch])
-
   const loadOverview = useCallback(async () => {
     if (!token) return
     setLoading(true)
     try {
       const [customersRes, partnerCostsRes, banksRes, paymentsRes, treasuryRes] = await Promise.all([
         getCustomerStatements(token, {
-          status: statementPaymentStatus || undefined,
-          search: debouncedSearch || undefined,
-          date_from: statementDateFrom || undefined,
-          date_to: statementDateTo || undefined,
+          status: appliedStatementPaymentStatus || undefined,
+          search: appliedStatementSearch || undefined,
+          date_from: appliedStatementDateFrom || undefined,
+          date_to: appliedStatementDateTo || undefined,
         }),
         getPartnerStatementShipmentCosts(token),
         listBankAccounts(token),
@@ -151,7 +157,7 @@ export default function AccountsOverview() {
     } finally {
       setLoading(false)
     }
-  }, [token, debouncedSearch, statementPaymentStatus, statementDateFrom, statementDateTo])
+  }, [token, appliedStatementSearch, appliedStatementPaymentStatus, appliedStatementDateFrom, appliedStatementDateTo])
 
   useEffect(() => {
     loadOverview()
@@ -160,7 +166,7 @@ export default function AccountsOverview() {
   useEffect(() => {
     setCustomerPage(1)
     setVendorPage(1)
-  }, [debouncedSearch, statementSearch, statementPaymentStatus, statementDateFrom, statementDateTo, partnerTypeFilter])
+  }, [appliedStatementSearch, statementSearch, appliedStatementPaymentStatus, appliedStatementDateFrom, appliedStatementDateTo, partnerTypeFilter, customersSubTab])
 
   const openPayment = (ctx = {}) => {
     setPaymentModal(true)
@@ -409,17 +415,17 @@ export default function AccountsOverview() {
 
   const filteredPartnerRows = useMemo(() => {
     let rows = partnerStatementRows
-    const q = statementSearch.trim().toLowerCase()
+    const q = appliedStatementSearch.trim().toLowerCase()
     if (q) {
       rows = rows.filter((r) => partnerDisplayName(r.partner_name).toLowerCase().includes(q))
     }
-    if (statementPaymentStatus) {
+    if (appliedStatementPaymentStatus) {
       rows = rows.filter(
-        (r) => rowPaymentStatus(r.paid_by_currency, r.remaining_by_currency) === statementPaymentStatus,
+        (r) => rowPaymentStatus(r.paid_by_currency, r.remaining_by_currency) === appliedStatementPaymentStatus,
       )
     }
-    if (statementDateFrom || statementDateTo) {
-      rows = rows.filter((r) => partnerMatchesDateFilter(r.lines, statementDateFrom, statementDateTo))
+    if (appliedStatementDateFrom || appliedStatementDateTo) {
+      rows = rows.filter((r) => partnerMatchesDateFilter(r.lines, appliedStatementDateFrom, appliedStatementDateTo))
     }
     if (partnerTypeFilter) {
       rows = rows.filter((r) => partnerCategoryKey(r, partnerVendorTypes) === partnerTypeFilter)
@@ -427,10 +433,10 @@ export default function AccountsOverview() {
     return rows
   }, [
     partnerStatementRows,
-    statementSearch,
-    statementPaymentStatus,
-    statementDateFrom,
-    statementDateTo,
+    appliedStatementSearch,
+    appliedStatementPaymentStatus,
+    appliedStatementDateFrom,
+    appliedStatementDateTo,
     partnerTypeFilter,
     partnerVendorTypes,
     partnerDisplayName,
@@ -491,13 +497,28 @@ export default function AccountsOverview() {
     [filteredPartnerRows, vendorPage],
   )
 
+  const applyStatementFilters = useCallback(() => {
+    setAppliedStatementSearch(statementSearch.trim())
+    setAppliedStatementDateFrom(statementDateFrom)
+    setAppliedStatementDateTo(statementDateTo)
+    setAppliedStatementPaymentStatus(statementPaymentStatus)
+  }, [statementSearch, statementDateFrom, statementDateTo, statementPaymentStatus])
+
   const clearStatementFilters = useCallback(() => {
     setStatementSearch('')
     setStatementDateFrom('')
     setStatementDateTo('')
     setStatementPaymentStatus('')
+    setAppliedStatementSearch('')
+    setAppliedStatementDateFrom('')
+    setAppliedStatementDateTo('')
+    setAppliedStatementPaymentStatus('')
     setPartnerTypeFilter('')
   }, [])
+
+  const isAr = i18n.language?.startsWith('ar')
+  const showStatementFilters =
+    activeTab === 'partners' || (activeTab === 'customers' && customersSubTab === 'statements')
 
   return (
     <Container size="xl">
@@ -552,77 +573,117 @@ export default function AccountsOverview() {
 
         {loading ? <LoaderDots /> : null}
 
-        <div className="accountings-filters-card accountings-statement-filters mb-3">
-          <div className="accountings-filters__row accountings-filters__row--main flex flex-wrap items-end gap-3">
-            <label className="flex min-w-[200px] flex-1 flex-col gap-1">
-              <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                {t('accountings.filterSearch', 'Search')}
-              </span>
-              <span className="relative flex items-center">
-                <Search className="pointer-events-none absolute left-3 h-4 w-4 text-slate-400" aria-hidden />
+        {activeTab === 'customers' ? (
+          <div className="accountings-customers-subtabs mb-3">
+            <Tabs
+              activeTab={customersSubTab}
+              onChange={setCustomersSubTab}
+              tabs={[
+                { id: 'statements', label: t('accountings.customerStatementsTab', 'Customer statements') },
+                { id: 'receipts', label: t('accountings.customerReceiptsTab', 'Customer receipts') },
+              ]}
+            />
+          </div>
+        ) : null}
+
+        {showStatementFilters ? (
+          <div className="clients-filters-card accountings-statement-filters mb-3">
+            <div className="clients-filters__row clients-filters__row--main">
+              <div className="clients-filters__search-wrap" dir={isAr ? 'rtl' : 'ltr'}>
+                <Search className="clients-filters__search-icon" aria-hidden />
                 <input
                   type="search"
-                  className="clients-input w-full pl-9"
+                  className="clients-input clients-filters__search"
                   value={statementSearch}
                   onChange={(e) => setStatementSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') applyStatementFilters()
+                  }}
                   placeholder={t('accountings.filterSearchPlaceholder', 'Search…')}
+                  aria-label={t('accountings.filterSearchPlaceholder', 'Search…')}
                 />
-              </span>
-            </label>
-            <label className="flex min-w-[140px] flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-400">
-              {t('accountings.filterDateFrom', 'From')}
-              <input
-                type="date"
-                className="clients-input"
-                value={statementDateFrom}
-                onChange={(e) => setStatementDateFrom(e.target.value)}
-              />
-            </label>
-            <label className="flex min-w-[140px] flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-400">
-              {t('accountings.filterDateTo', 'To')}
-              <input
-                type="date"
-                className="clients-input"
-                value={statementDateTo}
-                onChange={(e) => setStatementDateTo(e.target.value)}
-              />
-            </label>
-            <label className="flex min-w-[160px] flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-400">
-              {t('accountings.filterPaymentStatus', 'Payment status')}
-              <select
-                className="clients-input min-w-[160px]"
-                value={statementPaymentStatus}
-                onChange={(e) => setStatementPaymentStatus(e.target.value)}
-              >
-                <option value="">{t('accountings.filterPaymentStatusAll', 'All')}</option>
-                <option value="paid">{t('invoices.status.paid')}</option>
-                <option value="partial">{t('invoices.status.partial')}</option>
-                <option value="unpaid">{t('invoices.status.unpaid')}</option>
-              </select>
-            </label>
-            {activeTab === 'partners' ? (
-              <label className="flex min-w-[200px] flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-400">
-                {t('accountings.filterPartnerType', 'Partner type')}
+              </div>
+              <div className="clients-filters__fields">
+                <input
+                  type="date"
+                  className="clients-input"
+                  value={statementDateFrom}
+                  onChange={(e) => setStatementDateFrom(e.target.value)}
+                  aria-label={t('accountings.filterDateFrom', 'From')}
+                />
+                <input
+                  type="date"
+                  className="clients-input"
+                  value={statementDateTo}
+                  onChange={(e) => setStatementDateTo(e.target.value)}
+                  aria-label={t('accountings.filterDateTo', 'To')}
+                />
                 <select
-                  className="clients-input min-w-[200px]"
-                  value={partnerTypeFilter}
-                  onChange={(e) => setPartnerTypeFilter(e.target.value)}
+                  className="clients-input"
+                  value={statementPaymentStatus}
+                  onChange={(e) => setStatementPaymentStatus(e.target.value)}
+                  aria-label={t('accountings.filterPaymentStatus', 'Payment status')}
                 >
-                  <option value="">{t('accountings.partnerTypeAll', 'All')}</option>
-                  <option value="shipping">{t('accountings.partnerTypeShipping', 'Shipping lines')}</option>
-                  <option value="transport">{t('accountings.partnerTypeTransport', 'Transport contractors')}</option>
-                  <option value="customs">{t('accountings.partnerTypeCustoms', 'Customs clearance')}</option>
-                  <option value="insurance">{t('accountings.partnerTypeInsurance', 'Insurance')}</option>
+                  <option value="">{t('accountings.filterPaymentStatusAll', 'All statuses')}</option>
+                  <option value="paid">{t('invoices.status.paid')}</option>
+                  <option value="partial">{t('invoices.status.partial')}</option>
+                  <option value="unpaid">{t('invoices.status.unpaid')}</option>
                 </select>
-              </label>
-            ) : null}
-            <button type="button" className="accountings-btn h-10 shrink-0 self-end" onClick={clearStatementFilters}>
-              {t('accountings.clearFilters', 'Clear filters')}
+                {activeTab === 'partners' ? (
+                  <select
+                    className="clients-input"
+                    value={partnerTypeFilter}
+                    onChange={(e) => setPartnerTypeFilter(e.target.value)}
+                    aria-label={t('accountings.filterPartnerType', 'Partner type')}
+                  >
+                    <option value="">{t('accountings.partnerTypeAll', 'All')}</option>
+                    <option value="shipping">{t('accountings.partnerTypeShipping', 'Shipping lines')}</option>
+                    <option value="transport">{t('accountings.partnerTypeTransport', 'Transport contractors')}</option>
+                    <option value="customs">{t('accountings.partnerTypeCustoms', 'Customs clearance')}</option>
+                    <option value="insurance">{t('accountings.partnerTypeInsurance', 'Insurance')}</option>
+                  </select>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className="clients-filters__clear clients-filters__btn-icon"
+                onClick={clearStatementFilters}
+                aria-label={t('accountings.resetFilters', 'Reset filters')}
+                title={t('accountings.resetFilters', 'Reset filters')}
+              >
+                <RotateCcw className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="clients-filters__btn-icon clients-filters__btn-icon--primary"
+                onClick={applyStatementFilters}
+                aria-label={t('accountings.applyFilters', 'Apply filters')}
+                title={t('accountings.applyFilters', 'Apply filters')}
+              >
+                <Filter className="clients-filters__btn-icon-svg" aria-hidden />
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {activeTab === 'customers' && customersSubTab === 'receipts' ? (
+          <div className="accountings-receipts-toolbar mb-3 flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              className="clients-filters__btn-icon clients-filters__btn-icon--primary accountings-receipts-issue-btn"
+              onClick={() => setCashReceiptOpen(true)}
+            >
+              <FileText className="clients-filters__btn-icon-svg" aria-hidden />
+              <span>{t('accountings.cashReceipt.issueButton', 'Cash receipt')}</span>
             </button>
           </div>
-        </div>
+        ) : null}
 
-        {activeTab === 'customers' && (
+        {activeTab === 'customers' && customersSubTab === 'receipts' ? (
+          <CashReceiptHistoryPanel token={token} reloadKey={cashReceiptHistoryKey} showWhenEmpty />
+        ) : null}
+
+        {activeTab === 'customers' && customersSubTab === 'statements' && (
           <div className="accountings-table-section">
             <div className="accountings-table-wrap">
               <table className="accountings-table">
@@ -856,6 +917,13 @@ export default function AccountsOverview() {
           proofFile={advanceProofFile}
           setProofFile={setAdvanceProofFile}
           titleId="accountings-advance-payment-modal-title"
+        />
+
+        <CashReceiptIssuanceModal
+          open={cashReceiptOpen}
+          onClose={() => setCashReceiptOpen(false)}
+          token={token}
+          onCreated={() => setCashReceiptHistoryKey((k) => k + 1)}
         />
       </div>
     </Container>

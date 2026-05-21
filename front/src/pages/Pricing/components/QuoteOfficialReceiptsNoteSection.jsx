@@ -3,15 +3,15 @@ import { Trans, useTranslation } from 'react-i18next'
 /** Plain-text note stored on the quotation when the sales user enables it. */
 export function buildOfficialReceiptsNote(t) {
   const enBlock = [
-    t('pricing.customsOfficialReceiptsTitle', '⚡ Important — Official Government Receipts'),
+    t('pricing.customsOfficialReceiptsTitle', '⚡ Important — Official Receipts'),
     t(
       'pricing.customsOfficialReceiptsBodyEnPlain',
-      'The prices stated above for Inland Transport and/or Customs Clearance do not include official government receipts. This applies whether the service includes inland transport only, customs clearance only, or both. Receipt amounts are determined upon issuance from port authorities and relevant government bodies, and original receipts will be provided to the client upon collection.'
+      'The prices stated above for Inland Transport and/or Customs Clearance do not include Official Receipts. This applies whether the service includes inland transport only, customs clearance only, or both. Receipt amounts are determined upon issuance from port authorities and relevant government bodies, and original receipts will be provided to the client upon collection.'
     ),
   ].join('\n\n')
 
   const arBlock = [
-    t('pricing.customsOfficialReceiptsTitleAr', '⚡ هام — الإيصالات الرسمية الحكومية'),
+    t('pricing.customsOfficialReceiptsTitleAr', '⚡ هام — الإيصالات الرسمية'),
     t(
       'pricing.customsOfficialReceiptsBodyArPlain',
       'أسعار النقل الداخلي و/أو التخليص الجمركي المذكورة أعلاه غير شاملة الإيصالات الرسمية — سواء كانت الخدمة نقلاً داخلياً فقط، أو تخليصاً جمركياً فقط، أو كليهما معاً. يتم تحديد قيمة الإيصالات بعد وصولها من هيئة الموانئ والجهات الحكومية، ويتم تقديم أصول الإيصالات للعميل.'
@@ -31,24 +31,24 @@ export function OfficialReceiptsNotePreview() {
     <div
       className="pricing-quote-customs-info-note"
       role="note"
-      aria-label={t('pricing.customsOfficialReceiptsTitle', '⚡ Important — Official Government Receipts')}
+      aria-label={t('pricing.customsOfficialReceiptsTitle', '⚡ Important — Official Receipts')}
     >
       <div className="pricing-quote-customs-info-note__columns">
         <div className="pricing-quote-customs-info-note__col pricing-quote-customs-info-note__col--en">
           <div className="pricing-quote-customs-info-note__title">
-            {t('pricing.customsOfficialReceiptsTitle', '⚡ Important — Official Government Receipts')}
+            {t('pricing.customsOfficialReceiptsTitle', '⚡ Important — Official Receipts')}
           </div>
           <div className="pricing-quote-customs-info-note__body">
             <Trans
               i18nKey="pricing.customsOfficialReceiptsBodyEn"
               components={{ strong: <strong /> }}
-              defaults="The prices stated above for <strong>Inland Transport</strong> and/or <strong>Customs Clearance</strong> <strong>do not include official government receipts</strong>. This applies whether the service includes inland transport only, customs clearance only, or both. Receipt amounts are determined upon issuance from port authorities and relevant government bodies, and original receipts will be provided to the client upon collection."
+              defaults="The prices stated above for <strong>Inland Transport</strong> and/or <strong>Customs Clearance</strong> <strong>do not include Official Receipts</strong>. This applies whether the service includes inland transport only, customs clearance only, or both. Receipt amounts are determined upon issuance from port authorities and relevant government bodies, and original receipts will be provided to the client upon collection."
             />
           </div>
         </div>
         <div className="pricing-quote-customs-info-note__col pricing-quote-customs-info-note__col--ar">
           <div className="pricing-quote-customs-info-note__title">
-            {t('pricing.customsOfficialReceiptsTitleAr', '⚡ هام — الإيصالات الرسمية الحكومية')}
+            {t('pricing.customsOfficialReceiptsTitleAr', '⚡ هام — الإيصالات الرسمية')}
           </div>
           <div className="pricing-quote-customs-info-note__body">
             <Trans
@@ -79,7 +79,7 @@ export function QuoteOfficialReceiptsNoteControls({
   return (
     <section
       className="pricing-quote-official-receipts-section"
-      aria-label={t('pricing.officialReceiptsNoteSectionTitle', 'Official government receipts note')}
+      aria-label={t('pricing.officialReceiptsNoteSectionTitle', 'Official Receipts note')}
     >
       {!active ? (
         readOnly ? null : (
@@ -87,7 +87,7 @@ export function QuoteOfficialReceiptsNoteControls({
             <p className="text-sm text-gray-500 dark:text-gray-400 m-0">
               {t(
                 'pricing.officialReceiptsNoteNoneAdded',
-                'The official government receipts disclaimer is not included in this quotation.'
+                'The Official Receipts disclaimer is not included in this quotation.'
               )}
             </p>
             <button type="button" className="pricing-quote-customs-enable-btn" onClick={onEnable}>

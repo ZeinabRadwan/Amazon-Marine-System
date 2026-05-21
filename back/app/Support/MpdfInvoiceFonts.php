@@ -37,8 +37,9 @@ final class MpdfInvoiceFonts
                 'cairo' => [
                     'R' => 'Cairo-VF.ttf',
                     'B' => 'Cairo-VF.ttf',
-                    'useOTL' => 0xFF,
-                    'useKashida' => 75,
+                    // Cairo-VF triggers "MarkGlyphSets - Not tested yet" when OTL is enabled.
+                    'useOTL' => 0,
+                    'useKashida' => 0,
                 ],
             ],
             'default_font' => 'inter',
