@@ -76,7 +76,7 @@ class PaymentController extends Controller
 
         $data = $payments->map(static function (Payment $p): array {
             $arr = $p->toArray();
-            $arr['proof_url'] = $p->proof_path ? Storage::disk('public')->url($p->proof_path) : null;
+            $arr = self::appendProofMeta($arr, $p);
             $label = $p->sourceAccount ? trim($p->sourceAccount->primaryDisplayName()) : '';
             if ($label !== '') {
                 $arr['source_account_label'] = $label;
@@ -190,8 +190,7 @@ class PaymentController extends Controller
         ]);
 
         $fresh = $payment->fresh(['invoice', 'vendorBill', 'client', 'vendor', 'shipment', 'sourceAccount', 'targetAccount']);
-        $payload = $fresh?->toArray() ?? [];
-        $payload['proof_url'] = $payment->proof_path ? Storage::disk('public')->url($payment->proof_path) : null;
+        $payload = self::appendProofMeta($fresh?->toArray() ?? [], $payment);
         $label = $fresh?->sourceAccount ? trim($fresh->sourceAccount->primaryDisplayName()) : '';
         if ($label !== '') {
             $payload['source_account_label'] = $label;
@@ -202,5 +201,45 @@ class PaymentController extends Controller
         return response()->json([
             'data' => $payload,
         ], 201);
+    }
+
+    /**
+     * Stream payment proof (receipt image/PDF) via the API — avoids broken /storage URLs on XAMPP or split hosts.
+     */
+    public function downloadProof(Request $request, Payment $payment)
+    {
+        $user = $request->user();
+        abort_unless($user && ($user->can('financial.view') || $user->can('accounting.view')), 403);
+
+        $path = $payment->proof_path;
+        if (! $path || ! Storage::disk('public')->exists($path)) {
+            abort(404, __('Receipt file not found.'));
+        }
+
+        $basename = basename($path);
+        $mimeType = Storage::disk('public')->mimeType($path) ?: 'application/octet-stream';
+
+        return Storage::disk('public')->response($path, $basename, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="'.$basename.'"',
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private static function appendProofMeta(array $payload, Payment $payment): array
+    {
+        if ($payment->proof_path) {
+            $payload['has_proof'] = true;
+            $payload['proof_filename'] = basename((string) $payment->proof_path);
+        } else {
+            $payload['has_proof'] = false;
+            $payload['proof_filename'] = null;
+        }
+        unset($payload['proof_path']);
+
+        return $payload;
     }
 }

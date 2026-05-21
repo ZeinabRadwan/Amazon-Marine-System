@@ -228,6 +228,35 @@ export async function recordPayment(token, body) {
 }
 
 /**
+ * @param {object} payment
+ * @returns {boolean}
+ */
+export function paymentHasProof(payment) {
+  return Boolean(payment?.has_proof || payment?.proof_filename)
+}
+
+/**
+ * Streams/opens the stored proof file for a payment (authenticated API route).
+ * @param {string} token
+ * @param {number} paymentId
+ * @returns {Promise<{ blob: Blob, filename: string }>}
+ */
+export async function downloadPaymentProof(token, paymentId) {
+  const res = await apiFetch(`${getBaseUrl()}/payments/${encodeURIComponent(String(paymentId))}/proof`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: '*/*' },
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.message || json.error || `Failed to open payment proof (${res.status})`)
+  }
+  const blob = await res.blob()
+  const cd = res.headers.get('Content-Disposition') || ''
+  const match = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(cd)
+  const filename = match ? match[1].replace(/['"]/g, '') : `payment-proof-${paymentId}`
+  return { blob, filename }
+}
+
+/**
  * GET {{base_url}}/payments
  */
 export async function listPayments(token, params = {}) {

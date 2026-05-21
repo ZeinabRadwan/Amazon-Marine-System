@@ -52,6 +52,8 @@ import { BUCKET_DEFS, expenseBucket, LINE_TEMPLATES, expenseHaystack, partitionB
 import Tabs from '../../components/Tabs'
 import InvoiceDocumentPreviewModal from '../../components/InvoiceDocumentPreviewModal'
 import ClientPaymentModal from '../../components/ClientPaymentModal'
+import PaymentProofLink from '../../components/PaymentProofLink'
+import { paymentHasProof } from '../../api/accountings'
 import '../SDForms/SDForms.css'
 import { apiFetch } from '../../api/http'
 import { getApiBaseUrl } from '../../api/apiBaseUrl'
@@ -4973,17 +4975,15 @@ export default function ShipmentFinancialsModal({
                               ? ` • ${p.invoice_reference || clientInvoice?.invoice_number || `INV-${p.invoice_id}`}`
                               : ` • ${t('shipments.fin.advancePaymentNote', { defaultValue: 'Prepaid — not yet applied to invoice' })}`}
                             {p.shipment_reference ? ` • ${p.shipment_reference}` : ''}
-                            {p.proof_url ? (
+                            {paymentHasProof(p) ? (
                               <>
                                 {' • '}
-                                <a
-                                  href={p.proof_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <PaymentProofLink
+                                  payment={p}
                                   className="shipment-fin-summary-payment-item__proof"
                                 >
                                   {t('accountings.paymentReceiptOpen', { defaultValue: 'View receipt' })}
-                                </a>
+                                </PaymentProofLink>
                               </>
                             ) : null}
                           </p>

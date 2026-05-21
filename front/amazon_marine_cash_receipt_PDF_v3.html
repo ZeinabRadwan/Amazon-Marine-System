@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Amazon Marine — Cash Receipt</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+
+:root{
+  --navy:      #1B2A4A;
+  --navy-deep: #0F1D36;
+  --orange:    #E8790A;
+  --orange-lt: #FDF3E6;
+  --orange-bd: #F5C77A;
+  --green:     #059669;
+  --green-lt:  #ECFDF5;
+  --green-bd:  #6EE7B7;
+  --gray-50:   #FAFBFC;
+  --gray-400:  #9CA3AF;
+  --gray-600:  #4B5563;
+  --border:    #E5E7EB;
+  --text:      #111827;
+}
+
+body{
+  font-family:'Inter','Cairo',sans-serif;
+  background:#CBD5E1;
+  color:var(--text);
+  font-size:11px;
+}
+
+/* ── PAGE: exact A4 ─────────────────── */
+.page{
+  width:210mm;
+  height:297mm;
+  background:white;
+  margin:20px auto;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 4px 24px rgba(0,0,0,0.18);
+  overflow:hidden;
+  position:relative;
+  page-break-after: always;
+}
+
+@media print{
+  body{ background:white; }
+  .page{ margin:0; box-shadow:none; page-break-after:always; }
+}
+
+/* WATERMARK */
+.wm{
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%) rotate(-28deg);
+  font-size:64px; font-weight:900; letter-spacing:8px;
+  pointer-events:none; white-space:nowrap; z-index:0;
+  font-family:'Inter',sans-serif;
+}
+.wm-green{ color:rgba(5,150,105,0.05); }
+.wm-orange{ color:rgba(232,121,10,0.05); }
+
+/* ── HEADER ─────────────────────────── */
+.hd{
+  background:var(--navy-deep);
+  padding:14px 28px;
+  display:flex; justify-content:space-between; align-items:center;
+  position:relative; z-index:1; flex-shrink:0;
+}
+.hd::after{
+  content:""; position:absolute; bottom:0; left:0; right:0; height:2.5px;
+  background:linear-gradient(to right, var(--orange) 30%, transparent 100%);
+}
+.logo-area{ display:flex; align-items:center; gap:10px; }
+.logo-name{ font-size:15px; font-weight:700; color:white; letter-spacing:0.5px; }
+.logo-tag{ font-size:8px; color:rgba(255,255,255,0.4); letter-spacing:0.4px; margin-top:2px; }
+.hd-right{ text-align:right; }
+.doc-ar{ font-size:18px; font-weight:700; color:white; font-family:'Cairo',sans-serif; line-height:1; }
+.doc-en{ font-size:9px; color:rgba(255,255,255,0.45); letter-spacing:1.2px; text-transform:uppercase; margin-top:2px; }
+.doc-ref{ font-size:9px; color:rgba(255,255,255,0.35); margin-top:4px; font-family:monospace; letter-spacing:0.6px; }
+
+/* ── BAND ───────────────────────────── */
+.band{
+  padding:7px 28px;
+  display:flex; align-items:center; gap:8px;
+  flex-shrink:0; z-index:1; position:relative;
+}
+.band-adv{ background:var(--orange-lt); border-bottom:1px solid var(--orange-bd); }
+.band-shp{ background:var(--green-lt);  border-bottom:1px solid var(--green-bd); }
+.band-ico{
+  width:26px; height:26px; border-radius:6px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.band-ico svg{ width:13px; height:13px; stroke:white; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.b-en{ font-size:11px; font-weight:700; }
+.b-adv-en{ color:var(--orange); }
+.b-shp-en{ color:var(--green); }
+.b-ar{ font-size:10px; font-family:'Cairo',sans-serif; color:var(--gray-600); }
+.badge{
+  margin-right:auto; font-size:8px; font-weight:700;
+  letter-spacing:0.8px; text-transform:uppercase;
+  padding:2px 8px; border-radius:20px; color:white;
+}
+.badge-adv{ background:var(--orange); }
+.badge-shp{ background:var(--green); }
+
+/* ── INFO BAR ───────────────────────── */
+.infobar{
+  background:var(--gray-50); border-bottom:1px solid var(--border);
+  padding:8px 28px; display:flex; justify-content:space-between;
+  align-items:center; flex-shrink:0; z-index:1; position:relative;
+}
+.ig{ display:flex; gap:24px; }
+.ii .lbl{ font-size:8px; color:var(--gray-400); text-transform:uppercase; font-weight:600; letter-spacing:0.5px; }
+.ii .val{ font-size:11px; font-weight:700; color:var(--navy); margin-top:1px; }
+.ii .sub{ font-size:8px; color:var(--gray-400); font-family:'Cairo',sans-serif; margin-top:1px; }
+
+/* ── BODY ───────────────────────────── */
+.body{ padding:14px 28px; flex:1; display:flex; flex-direction:column; gap:10px; z-index:1; position:relative; overflow:hidden; }
+
+/* ── PARTIES ─────────────────────────── */
+.parties{
+  display:grid; grid-template-columns:1fr 1px 1fr;
+  border:1px solid var(--border); border-radius:6px; overflow:hidden;
+  flex-shrink:0;
+}
+.party{ padding:10px 14px; }
+.party-div{ background:var(--border); }
+.p-role{ font-size:7.5px; font-weight:700; color:var(--orange); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+.p-name{ font-size:13px; font-weight:700; color:var(--navy); margin-bottom:3px; }
+.p-det{ font-size:9.5px; color:var(--gray-400); line-height:1.65; }
+
+/* ── SHIPMENT CARD ──────────────────── */
+.ship-card{
+  background:var(--green-lt); border:1px solid var(--green-bd);
+  border-radius:6px; padding:10px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:10px; flex-shrink:0;
+}
+.sc-flow{ display:flex; align-items:center; gap:12px; }
+.sc-port-name{ font-size:15px; font-weight:700; color:var(--navy); }
+.sc-port-lbl{ font-size:7.5px; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.3px; margin-top:1px; }
+.sc-arrow{ font-size:18px; color:var(--green); font-weight:700; }
+.sc-dets{ display:flex; gap:16px; flex-wrap:wrap; }
+.sc-d-val{ font-size:11px; font-weight:700; color:var(--navy); }
+.sc-d-lbl{ font-size:7.5px; color:var(--gray-400); text-transform:uppercase; margin-top:1px; }
+
+/* ── AMOUNT HERO ──────────────────────*/
+.hero{
+  background:var(--navy-deep); border-radius:6px;
+  padding:14px 20px;
+  display:flex; justify-content:space-between; align-items:center;
+  flex-shrink:0;
+}
+.h-lbl-en{ font-size:13px; font-weight:700; color:white; }
+.h-lbl-ar{ font-size:10px; color:rgba(255,255,255,0.45); font-family:'Cairo',sans-serif; margin-top:2px; }
+.h-note{ font-size:8.5px; color:rgba(255,255,255,0.3); margin-top:5px; }
+.h-note-ar{ font-size:8.5px; color:rgba(255,255,255,0.3); font-family:'Cairo',sans-serif; direction:rtl; margin-top:2px; }
+.h-amounts{ display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+.h-amt{ font-size:24px; font-weight:700; font-family:monospace; }
+.h-amt-orange{ color:var(--orange); }
+.h-amt-green{ color:#34D399; }
+.h-amt-yellow{ font-size:18px; color:#FCD34D; font-weight:700; font-family:monospace; }
+.h-cur{ font-size:9.5px; color:rgba(255,255,255,0.45); margin-top:1px; }
+.h-sep{ width:100%; height:1px; background:rgba(255,255,255,0.1); }
+
+/* ── PAYMENT DETAILS BLOCK ──────────── */
+.block{
+  border:1px solid var(--border); border-radius:6px;
+  overflow:hidden; flex-shrink:0;
+}
+.bh{
+  background:var(--navy); padding:6px 14px;
+  display:flex; align-items:center; gap:7px;
+}
+.bh svg{ width:13px; height:13px; stroke:rgba(255,255,255,0.55); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+.bh-en{ font-size:8.5px; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.7px; }
+.bh-ar{ font-size:10.5px; font-weight:600; color:white; font-family:'Cairo',sans-serif; }
+
+.brow2{ display:grid; grid-template-columns:120px 1fr 120px 1fr; border-bottom:1px solid var(--border); }
+.brow2:last-child{ border-bottom:none; }
+.brow2 .bk:nth-child(3){ border-right:1px solid var(--border); }
+.brow1{ display:flex; border-bottom:1px solid var(--border); }
+.brow1:last-child{ border-bottom:none; }
+
+.bk{
+  background:var(--gray-50); padding:7px 12px;
+  min-width:120px; max-width:120px; flex-shrink:0;
+  display:flex; flex-direction:column; gap:1px; justify-content:center;
+}
+.brow2 .bk{ max-width:none; min-width:0; }
+.bk-en{ font-size:8px; font-weight:700; color:var(--gray-400); letter-spacing:0.07em; text-transform:uppercase; direction:ltr; text-align:left; }
+.bk-ar{ font-size:10.5px; font-weight:600; color:var(--gray-600); font-family:'Cairo',sans-serif; }
+
+.bv{ flex:1; background:white; padding:7px 12px; font-size:11.5px; font-weight:500; color:var(--text); line-height:1.5; min-width:0; }
+.bv-bold{ font-weight:700; color:var(--navy); font-size:12px; }
+.bv-mono{ font-family:monospace; font-size:12px; font-weight:700; color:var(--navy); letter-spacing:0.3px; }
+
+.mpill{
+  display:inline-flex; align-items:center; gap:4px;
+  background:var(--navy); color:white;
+  font-size:10px; font-weight:600;
+  padding:2px 10px; border-radius:20px;
+}
+
+/* ── CONFIRM ─────────────────────────── */
+.confirm{
+  border-radius:6px; padding:9px 14px;
+  display:flex; align-items:center; gap:10px; flex-shrink:0;
+}
+.confirm-adv{ background:var(--orange-lt); border:1px solid var(--orange-bd); }
+.confirm-shp{ background:var(--green-lt);  border:1px solid var(--green-bd); }
+.c-ico{
+  width:30px; height:30px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.c-ico-g{ background:var(--green); }
+.c-ico-o{ background:var(--orange); }
+.c-ico svg{ width:15px; height:15px; stroke:white; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+.c-en{ font-size:10.5px; font-weight:700; }
+.c-en-g{ color:var(--green); }
+.c-en-o{ color:var(--orange); }
+.c-ar{ font-size:9.5px; font-family:'Cairo',sans-serif; color:var(--gray-600); margin-top:2px; }
+
+/* ── ACKNOWLEDGMENT ─────────────────── */
+.ack{
+  border:1px solid var(--border); border-radius:6px;
+  overflow:hidden; flex-shrink:0;
+}
+.ack-head{
+  background:var(--navy); padding:6px 14px;
+  display:flex; align-items:center; gap:7px;
+}
+.ack-head svg{ width:12px; height:12px; stroke:rgba(255,255,255,0.55); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.ack-head-en{ font-size:8.5px; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.7px; }
+.ack-head-ar{ font-size:10.5px; font-weight:600; color:white; font-family:'Cairo',sans-serif; }
+.ack-row{ display:grid; grid-template-columns:1fr 1px 1fr 1px 1fr; }
+.ack-cell{ padding:8px 14px; }
+.ack-cell-div{ background:var(--border); }
+.ack-lbl{ font-size:8px; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; }
+.ack-line{ height:28px; border-bottom:1.5px solid var(--navy); }
+
+/* ── FOOTER ─────────────────────────── */
+.ft{
+  background:var(--navy-deep); padding:10px 28px;
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:8px; flex-shrink:0;
+  border-top:2px solid var(--orange);
+}
+.ft-col{ display:flex; flex-direction:column; gap:2px; }
+.ft-item{ font-size:8.5px; color:rgba(255,255,255,0.5); }
+.ft-item span{ color:var(--orange); font-weight:600; }
+.ft-center{ text-align:center; }
+.ft-brand{ font-size:12px; font-weight:700; color:white; letter-spacing:0.5px; }
+.ft-slogan{ font-size:7.5px; color:rgba(255,255,255,0.3); margin-top:1px; font-family:'Cairo',sans-serif; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     CASE A — ADVANCE PAYMENT
+     ══════════════════════════════════ -->
+<div class="page">
+  <div class="wm wm-orange">RECEIVED</div>
+
+  <div class="hd">
+    <div class="logo-area">
+      <img src="https://www.amazonmarine.ltd/_next/image?url=%2Fimages%2Flogo.png&w=128&q=75"
+           alt="Amazon Marine"
+           style="height:44px;width:auto;object-fit:contain;filter:brightness(0) invert(1);">
+      <div>
+        <div class="logo-name">AMAZON MARINE</div>
+        <div class="logo-tag">Integrated Ocean Freight &amp; Logistics</div>
+      </div>
+    </div>
+    <div class="hd-right">
+      <div class="doc-ar">إيصال استلام نقدية</div>
+      <div class="doc-en">Cash Receipt</div>
+      <div class="doc-ref">AM-RCP-2025-05-00047</div>
+    </div>
+  </div>
+
+  <div class="band band-adv">
+    <div class="band-ico" style="background:var(--orange);">
+      <svg viewBox="0 0 24 24"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+    </div>
+    <div>
+      <div class="b-en b-adv-en">Advance Payment — Pre-Booking Credit</div>
+      <div class="b-ar">دفعة مقدمة — رصيد مدفوع مسبقاً قبل إصدار الفاتورة</div>
+    </div>
+    <div class="badge badge-adv">ADVANCE</div>
+  </div>
+
+  <div class="infobar">
+    <div class="ig">
+      <div class="ii">
+        <div class="lbl">Receipt Date</div>
+        <div class="val">19 May 2025</div>
+        <div class="sub">تاريخ الإيصال</div>
+      </div>
+      <div class="ii">
+        <div class="lbl">Payment Date</div>
+        <div class="val">19 May 2025</div>
+        <div class="sub">تاريخ الدفع</div>
+      </div>
+      <div class="ii">
+        <div class="lbl">Type</div>
+        <div class="val">Advance / دفعة مقدمة</div>
+        <div class="sub">نوع الدفعة</div>
+      </div>
+    </div>
+    <div class="ii" style="text-align:right;">
+      <div class="lbl">Receipt No.</div>
+      <div class="val" style="font-family:monospace;letter-spacing:1px;">AM-RCP-2025-05-00047</div>
+      <div class="sub">رقم الإيصال</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="parties">
+      <div class="party">
+        <div class="p-role">Received By / استلمت بواسطة</div>
+        <div class="p-name">Amazon Marine</div>
+        <div class="p-det">5th Settlement, New Cairo, Egypt<br>cs@amazonmarine.ltd &nbsp;·&nbsp; +2 02 2560 1776</div>
+      </div>
+      <div class="party-div"></div>
+      <div class="party">
+        <div class="p-role">Received From / مُستلم من</div>
+        <div class="p-name">شركة النيل للصناعات الغذائية</div>
+        <div class="p-det">Mr. Ahmed Mahmoud — Procurement Manager<br>10th of Ramadan City, Egypt &nbsp;·&nbsp; +2 010 0123 4567</div>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div>
+        <div class="h-lbl-en">Amount Received</div>
+        <div class="h-lbl-ar">المبلغ المستلم</div>
+        <div class="h-note">This amount will be applied as credit against future invoices</div>
+        <div class="h-note-ar">يُطبّق هذا المبلغ كرصيد دائن على الفواتير القادمة</div>
+      </div>
+      <div class="h-amounts">
+        <div>
+          <div class="h-amt h-amt-orange">$2,000.00</div>
+          <div class="h-cur">USD — دولار أمريكي</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="bh">
+        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span class="bh-en">Payment Details</span>
+        <span class="bh-ar">/ تفاصيل الدفع</span>
+      </div>
+      <div class="brow2">
+        <div class="bk"><span class="bk-en">Method</span><span class="bk-ar">طريقة الدفع</span></div>
+        <div class="bv"><span class="mpill">Bank Transfer — تحويل بنكي</span></div>
+        <div class="bk"><span class="bk-en">Source Account</span><span class="bk-ar">حساب المصدر</span></div>
+        <div class="bv bv-bold">CIB — CIB</div>
+      </div>
+      <div class="brow2">
+        <div class="bk"><span class="bk-en">Currency</span><span class="bk-ar">العملة</span></div>
+        <div class="bv bv-bold">USD</div>
+        <div class="bk"><span class="bk-en">Amount</span><span class="bk-ar">المبلغ</span></div>
+        <div class="bv bv-mono">$2,000.00</div>
+      </div>
+      <div class="brow1">
+        <div class="bk"><span class="bk-en">Reference</span><span class="bk-ar">المرجع</span></div>
+        <div class="bv bv-mono">TXN-20250519-008847</div>
+      </div>
+      <div class="brow1">
+        <div class="bk"><span class="bk-en">Notes</span><span class="bk-ar">ملاحظات</span></div>
+        <div class="bv" style="color:var(--gray-600);">دفعة مقدمة قبل حجز الشحنة — يُطبّق على الفاتورة القادمة</div>
+      </div>
+    </div>
+
+    <div class="confirm confirm-adv">
+      <div class="c-ico c-ico-o">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        <div class="c-en c-en-o">Payment Received &amp; Confirmed — Amazon Marine acknowledges receipt of the above amount.</div>
+        <div class="c-ar">تم استلام الدفعة وتأكيدها — تُقرّ أمازون مارين باستلام المبلغ المذكور أعلاه.</div>
+      </div>
+    </div>
+
+    <div class="ack">
+      <div class="ack-head">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="ack-head-en">Acknowledgment of Receipt</span>
+        <span class="ack-head-ar">/ إقرار الاستلام</span>
+      </div>
+      <div class="ack-row">
+        <div class="ack-cell">
+          <div class="ack-lbl">Received By / اسم المستلم</div>
+          <div class="ack-line"></div>
+        </div>
+        <div class="ack-cell-div"></div>
+        <div class="ack-cell">
+          <div class="ack-lbl">Company / الشركة</div>
+          <div class="ack-line"></div>
+        </div>
+        <div class="ack-cell-div"></div>
+        <div class="ack-cell">
+          <div class="ack-lbl">Signature / التوقيع</div>
+          <div class="ack-line"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ft">
+    <div class="ft-col">
+      <div class="ft-item"><span>Location:</span> 5th Settlement, New Cairo, Egypt</div>
+      <div class="ft-item"><span>Email:</span> cs@amazonmarine.ltd</div>
+    </div>
+    <div class="ft-center">
+      <div class="ft-brand">AMAZON MARINE</div>
+      <div class="ft-slogan">Your Trusted Logistics Partner — شريكك اللوجستي الموثوق</div>
+    </div>
+    <div class="ft-col" style="text-align:right;">
+      <div class="ft-item"><span>Web:</span> www.amazonmarine.ltd</div>
+      <div class="ft-item"><span>Phone:</span> 02-25601776 / 01200744888</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     CASE B — SHIPMENT-LINKED PAYMENT
+     ══════════════════════════════════ -->
+<div class="page">
+  <div class="wm wm-green">RECEIVED</div>
+
+  <div class="hd">
+    <div class="logo-area">
+      <img src="https://www.amazonmarine.ltd/_next/image?url=%2Fimages%2Flogo.png&w=128&q=75"
+           alt="Amazon Marine"
+           style="height:44px;width:auto;object-fit:contain;filter:brightness(0) invert(1);">
+      <div>
+        <div class="logo-name">AMAZON MARINE</div>
+        <div class="logo-tag">Integrated Ocean Freight &amp; Logistics</div>
+      </div>
+    </div>
+    <div class="hd-right">
+      <div class="doc-ar">إيصال استلام نقدية</div>
+      <div class="doc-en">Cash Receipt</div>
+      <div class="doc-ref">AM-RCP-2025-05-00048</div>
+    </div>
+  </div>
+
+  <div class="band band-shp">
+    <div class="band-ico" style="background:var(--green);">
+      <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    </div>
+    <div>
+      <div class="b-en b-shp-en">Shipment-Linked Payment</div>
+      <div class="b-ar">دفعة مرتبطة بشحنة — الفاتورة رقم AM-INV-2025-05-00031</div>
+    </div>
+    <div class="badge badge-shp">SHIPMENT</div>
+  </div>
+
+  <div class="infobar">
+    <div class="ig">
+      <div class="ii">
+        <div class="lbl">Receipt Date</div>
+        <div class="val">19 May 2025</div>
+        <div class="sub">تاريخ الإيصال</div>
+      </div>
+      <div class="ii">
+        <div class="lbl">Payment Date</div>
+        <div class="val">19 May 2025</div>
+        <div class="sub">تاريخ الدفع</div>
+      </div>
+      <div class="ii">
+        <div class="lbl">Invoice Ref.</div>
+        <div class="val" style="font-family:monospace;font-size:10.5px;">AM-INV-2025-05-00031</div>
+        <div class="sub">رقم الفاتورة المرتبطة</div>
+      </div>
+    </div>
+    <div class="ii" style="text-align:right;">
+      <div class="lbl">Receipt No.</div>
+      <div class="val" style="font-family:monospace;letter-spacing:1px;">AM-RCP-2025-05-00048</div>
+      <div class="sub">رقم الإيصال</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="parties">
+      <div class="party">
+        <div class="p-role">Received By / استلمت بواسطة</div>
+        <div class="p-name">Amazon Marine</div>
+        <div class="p-det">5th Settlement, New Cairo, Egypt<br>cs@amazonmarine.ltd &nbsp;·&nbsp; +2 02 2560 1776</div>
+      </div>
+      <div class="party-div"></div>
+      <div class="party">
+        <div class="p-role">Received From / مُستلم من</div>
+        <div class="p-name">شركة النيل للصناعات الغذائية</div>
+        <div class="p-det">Mr. Ahmed Mahmoud — Procurement Manager<br>10th of Ramadan City, Egypt &nbsp;·&nbsp; +2 010 0123 4567</div>
+      </div>
+    </div>
+
+    <div class="ship-card">
+      <div class="sc-flow">
+        <div>
+          <div class="sc-port-name">Alexandria</div>
+          <div class="sc-port-lbl">POL</div>
+        </div>
+        <div class="sc-arrow">→</div>
+        <div>
+          <div class="sc-port-name">Hamburg</div>
+          <div class="sc-port-lbl">POD</div>
+        </div>
+      </div>
+      <div class="sc-dets">
+        <div><div class="sc-d-val">MSC</div><div class="sc-d-lbl">Carrier</div></div>
+        <div><div class="sc-d-val">40' DC</div><div class="sc-d-lbl">Container</div></div>
+        <div><div class="sc-d-val">AM-BKG-0091</div><div class="sc-d-lbl">Booking Ref.</div></div>
+        <div><div class="sc-d-val">Ocean + Inland</div><div class="sc-d-lbl">Services</div></div>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div>
+        <div class="h-lbl-en">Amount Received</div>
+        <div class="h-lbl-ar">المبلغ المستلم</div>
+        <div class="h-note">Full settlement — Invoice AM-INV-2025-05-00031</div>
+        <div class="h-note-ar">سداد كامل للفاتورة AM-INV-2025-05-00031</div>
+      </div>
+      <div class="h-amounts">
+        <div>
+          <div class="h-amt h-amt-green">$1,675.00</div>
+          <div class="h-cur">USD — دولار أمريكي</div>
+        </div>
+        <div class="h-sep"></div>
+        <div>
+          <div class="h-amt-yellow">9,300.00 EGP</div>
+          <div class="h-cur">جنيه مصري</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="bh">
+        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span class="bh-en">Payment Details</span>
+        <span class="bh-ar">/ تفاصيل الدفع</span>
+      </div>
+      <div class="brow2">
+        <div class="bk"><span class="bk-en">Method</span><span class="bk-ar">طريقة الدفع</span></div>
+        <div class="bv"><span class="mpill">Bank Transfer — تحويل بنكي</span></div>
+        <div class="bk"><span class="bk-en">Source Account</span><span class="bk-ar">حساب المصدر</span></div>
+        <div class="bv bv-bold">CIB — CIB</div>
+      </div>
+      <div class="brow1">
+        <div class="bk"><span class="bk-en">Reference</span><span class="bk-ar">المرجع</span></div>
+        <div class="bv bv-mono">TXN-20250519-009123</div>
+      </div>
+    </div>
+
+    <div class="confirm confirm-shp">
+      <div class="c-ico c-ico-g">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        <div class="c-en c-en-g">Payment Received &amp; Invoice Settled — Amazon Marine acknowledges full receipt of the above amount.</div>
+        <div class="c-ar">تم استلام الدفعة وتسوية الفاتورة — تُقرّ أمازون مارين باستلام المبلغ الكامل المذكور أعلاه.</div>
+      </div>
+    </div>
+
+    <div class="ack">
+      <div class="ack-head">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="ack-head-en">Acknowledgment of Receipt</span>
+        <span class="ack-head-ar">/ إقرار الاستلام</span>
+      </div>
+      <div class="ack-row">
+        <div class="ack-cell">
+          <div class="ack-lbl">Received By / اسم المستلم</div>
+          <div class="ack-line"></div>
+        </div>
+        <div class="ack-cell-div"></div>
+        <div class="ack-cell">
+          <div class="ack-lbl">Company / الشركة</div>
+          <div class="ack-line"></div>
+        </div>
+        <div class="ack-cell-div"></div>
+        <div class="ack-cell">
+          <div class="ack-lbl">Signature / التوقيع</div>
+          <div class="ack-line"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ft">
+    <div class="ft-col">
+      <div class="ft-item"><span>Location:</span> 5th Settlement, New Cairo, Egypt</div>
+      <div class="ft-item"><span>Email:</span> cs@amazonmarine.ltd</div>
+    </div>
+    <div class="ft-center">
+      <div class="ft-brand">AMAZON MARINE</div>
+      <div class="ft-slogan">Your Trusted Logistics Partner — شريكك اللوجستي الموثوق</div>
+    </div>
+    <div class="ft-col" style="text-align:right;">
+      <div class="ft-item"><span>Web:</span> www.amazonmarine.ltd</div>
+      <div class="ft-item"><span>Phone:</span> 02-25601776 / 01200744888</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

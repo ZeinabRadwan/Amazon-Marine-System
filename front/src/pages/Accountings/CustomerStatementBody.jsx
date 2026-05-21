@@ -10,6 +10,8 @@ import {
   FileDown,
 } from 'lucide-react'
 import InvoiceStatusBadge from '../../components/InvoiceStatusBadge'
+import PaymentProofLink from '../../components/PaymentProofLink'
+import { paymentHasProof } from '../../api/accountings'
 import { CurrencyMapBadges } from './CurrencyMapBadges'
 import {
   customerPaymentExchangeRateLine,
@@ -378,7 +380,9 @@ export default function CustomerStatementBody({
                           </div>
                           <div>
                             <div className="accountings-pay-detail-lbl">{t('accountings.targetAccount', 'Receiving account')}</div>
-                            <div className="accountings-pay-detail-val">{p.target_account_label || '—'}</div>
+                            <div className="accountings-pay-detail-val">
+                              {p.target_account_label || p.source_account_label || '—'}
+                            </div>
                           </div>
                           <div>
                             <div className="accountings-pay-detail-lbl">{t('payments.amount', 'Amount')}</div>
@@ -452,19 +456,14 @@ export default function CustomerStatementBody({
                           </div>
                         )}
                         <div className="accountings-pay-attach-row">
-                          {p.proof_url ? (
-                            <a
-                              href={p.proof_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="accountings-pay-doc-link"
-                            >
+                          {paymentHasProof(p) ? (
+                            <PaymentProofLink payment={p}>
                               <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
                               <span>{p.proof_filename || t('accountings.receiptAttachment', 'Receipt / proof')}</span>
                               <span className="accountings-wire-badge accountings-wire-badge--attached">
                                 {t('accountings.attachmentUploaded', 'Attached')}
                               </span>
-                            </a>
+                            </PaymentProofLink>
                           ) : (
                             <span className="accountings-pay-no-attach">{t('accountings.noAttachment', 'No attachment')}</span>
                           )}

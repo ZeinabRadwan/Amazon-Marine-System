@@ -19,7 +19,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountingController extends Controller
@@ -747,7 +746,6 @@ class AccountingController extends Controller
                 ->sortByDesc(fn (Payment $p) => $p->paid_at?->toDateString() ?? '')
                 ->values()
                 ->map(static function (Payment $p) use ($inv, $computed, $sequenceByPaymentId, $lastPaymentId, $invoicePaymentCount): array {
-                    $proofUrl = $p->proof_path ? Storage::disk('public')->url($p->proof_path) : null;
                     // Client receipts: receiving account is usually source_account_id (InvoiceController / PaymentController).
                     $recvAcct = $p->sourceAccount ?? $p->targetAccount;
                     $targetAccountLabel = null;
@@ -795,7 +793,7 @@ class AccountingController extends Controller
                         'target_currency_code' => $p->target_currency_code
                             ? strtoupper((string) $p->target_currency_code)
                             : null,
-                        'proof_url' => $proofUrl,
+                        'has_proof' => (bool) $p->proof_path,
                         'proof_filename' => $p->proof_path ? basename((string) $p->proof_path) : null,
                         'shipment_id' => $p->shipment_id,
                         'shipment_reference' => $shipmentRef,

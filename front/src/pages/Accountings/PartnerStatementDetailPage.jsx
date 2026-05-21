@@ -17,8 +17,10 @@ import {
   getPartnerStatementShipmentCosts,
   listBankAccounts,
   listPayments,
+  paymentHasProof,
   recordPayment,
 } from '../../api/accountings'
+import PaymentProofLink from '../../components/PaymentProofLink'
 import { getTreasuryBankOverview } from '../../api/treasury'
 import {
   UNASSIGNED_PARTNER_SENTINEL,
@@ -722,7 +724,7 @@ export default function PartnerStatementDetailPage() {
                                               (p.notes && String(p.notes).trim().slice(0, 120)) ||
                                               ''
                                             const posted = vendorPaymentPostedAt(p)
-                                            const proof = p.proof_url ? String(p.proof_url) : ''
+                                            const proof = paymentHasProof(p)
                                             return (
                                               <tr key={p.id}>
                                                 <td>{formatStatementDetailDate(posted, i18n.language)}</td>
@@ -742,14 +744,12 @@ export default function PartnerStatementDetailPage() {
                                                 </td>
                                                 <td className="text-sm">
                                                   {proof ? (
-                                                    <a
-                                                      href={proof}
-                                                      target="_blank"
-                                                      rel="noopener noreferrer"
+                                                    <PaymentProofLink
+                                                      payment={p}
                                                       className="text-blue-600 hover:underline dark:text-blue-400"
                                                     >
                                                       {t('accountings.paymentReceiptOpen', 'View')}
-                                                    </a>
+                                                    </PaymentProofLink>
                                                   ) : (
                                                     '—'
                                                   )}
