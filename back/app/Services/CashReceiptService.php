@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BankAccount;
 use App\Models\CashReceipt;
 use App\Models\Client;
 use App\Models\Payment;
@@ -111,6 +112,245 @@ class CashReceiptService
             'company' => self::companyBlock(),
             'receipt_number_preview' => self::previewReceiptNumber(),
             'logo_src' => PdfLogo::transportInstructionsImgSrc(),
+            'kind_band' => self::kindBandMeta($kind, self::labels($locale === 'ar' ? 'ar' : 'en')),
+            'infobar' => self::infobarMeta($kind, $payments),
+            'hero' => self::heroMeta($kind, $payments, $totals),
+            'payment_detail_blocks' => self::paymentDetailBlocks($payments),
+            'confirm' => self::confirmMeta($kind),
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function confirmMeta(string $kind): array
+    {
+        if ($kind === 'shipment') {
+            return [
+                'wrap_class' => 'confirm-shp',
+                'ico_class' => 'c-ico-g',
+                'en_class' => 'c-en-g',
+                'en' => 'Payment Received & Invoice Settled — Amazon Marine acknowledges full receipt of the above amount.',
+                'ar' => 'تم استلام الدفعة وتسوية الفاتورة — تُقرّ أمازون مارين باستلام المبلغ الكامل المذكور أعلاه.',
+            ];
+        }
+
+        return [
+            'wrap_class' => 'confirm-adv',
+            'ico_class' => 'c-ico-o',
+            'en_class' => 'c-en-o',
+            'en' => 'Payment Received & Confirmed — Amazon Marine acknowledges receipt of the above amount.',
+            'ar' => 'تم استلام الدفعة وتأكيدها — تُقرّ أمازون مارين باستلام المبلغ المذكور أعلاه.',
+        ];
+    }
+
+    /**
+     * @param  Collection<int, Payment>  $payments
+     * @return list<array<string, string|null>>
+     */
+    public static function paymentDetailBlocks(Collection $payments): array
+    {
+        $blocks = [];
+        foreach ($payments as $payment) {
+            $blocks[] = [
+                'method_pill' => self::paymentMethodPill((string) ($payment->method ?? '')),
+                'source_account' => self::sourceAccountDisplayLabel($payment->sourceAccount),
+                'currency' => strtoupper((string) ($payment->currency_code ?: 'USD')),
+                'amount' => self::formatPaymentAmountDisplay($payment),
+                'reference' => trim((string) ($payment->reference ?? '')) !== ''
+                    ? trim((string) $payment->reference)
+                    : 'PAY-'.$payment->id,
+                'notes' => trim((string) ($payment->notes ?? '')) !== ''
+                    ? trim((string) $payment->notes)
+                    : null,
+            ];
+        }
+
+        return $blocks;
+    }
+
+    private static function paymentMethodPill(string $method): string
+    {
+        $key = strtolower(trim($method));
+
+        return match ($key) {
+            'bank_transfer' => 'Bank Transfer — تحويل بنكي',
+            'cash' => 'Cash — نقداً',
+            'cheque', 'check' => 'Cheque — شيك',
+            'internal', 'internal_transfer' => 'Internal Transfer — تحويل داخلي',
+            '' => '—',
+            default => ucwords(str_replace('_', ' ', $key)).' — '.$key,
+        };
+    }
+
+    private static function sourceAccountDisplayLabel(?BankAccount $account): string
+    {
+        if ($account === null) {
+            return '—';
+        }
+
+        $en = trim((string) ($account->name_en ?? ''));
+        if ($en === '') {
+            $en = trim((string) ($account->bank_name ?? $account->account_name ?? ''));
+        }
+        $ar = trim((string) ($account->name_ar ?? ''));
+
+        if ($en !== '' && $ar !== '' && $en !== $ar) {
+            return $en.' — '.$ar;
+        }
+
+        $primary = $account->primaryDisplayName();
+
+        return $primary !== '' ? $primary : '—';
+    }
+
+    private static function formatPaymentAmountDisplay(Payment $payment): string
+    {
+        $code = strtoupper((string) ($payment->currency_code ?: 'USD'));
+        $formatted = number_format((float) $payment->amount, 2);
+
+        return match ($code) {
+            'USD' => '$'.$formatted,
+            'EUR' => '€'.$formatted,
+            'EGP' => $formatted.' EGP',
+            'GBP' => '£'.$formatted,
+            default => $formatted.' '.$code,
+        };
+    }
+
+    /**
+     * @param  array<string, float|int|string>  $totalsByCurrency
+     * @return array<string, mixed>
+     */
+    public static function heroMeta(string $kind, Collection $payments, array $totalsByCurrency): array
+    {
+        $invoiceRef = self::primaryInvoiceReference($payments);
+        $notes = match ($kind) {
+            'advance' => [
+                'en' => 'This amount will be applied as credit against future invoices',
+                'ar' => 'يُطبّق هذا المبلغ كرصيد دائن على الفواتير القادمة',
+            ],
+            'shipment' => [
+                'en' => $invoiceRef ? "Full settlement — Invoice {$invoiceRef}" : 'Full settlement against invoice',
+                'ar' => $invoiceRef ? "سداد كامل للفاتورة {$invoiceRef}" : 'سداد كامل للفاتورة',
+            ],
+            default => [
+                'en' => 'Total amount received for selected payments',
+                'ar' => 'إجمالي المبلغ المستلم للدفعات المحددة',
+            ],
+        };
+
+        $amounts = [];
+        $index = 0;
+        foreach ($totalsByCurrency as $currency => $amount) {
+            $code = strtoupper((string) $currency);
+            $amounts[] = [
+                'formatted' => number_format((float) $amount, 2),
+                'currency' => $code,
+                'cur_label' => self::currencyHeroLabel($code),
+                'amt_class' => match ($index) {
+                    0 => 'hero-amt-o',
+                    1 => 'hero-amt-g',
+                    default => 'hero-amt-yellow',
+                },
+            ];
+            $index++;
+        }
+
+        return [
+            'notes' => $notes,
+            'amounts' => $amounts,
+        ];
+    }
+
+    private static function currencyHeroLabel(string $code): string
+    {
+        $ar = match (strtoupper($code)) {
+            'USD' => 'دولار أمريكي',
+            'EGP' => 'جنيه مصري',
+            'EUR' => 'يورو',
+            'GBP' => 'جنيه إسترليني',
+            'SAR' => 'ريال سعودي',
+            'AED' => 'درهم إماراتي',
+            default => $code,
+        };
+
+        return strtoupper($code).' — '.$ar;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function infobarMeta(string $kind, Collection $payments): array
+    {
+        $third = match ($kind) {
+            'shipment' => [
+                'lbl' => 'Invoice Ref.',
+                'sub' => 'رقم الفاتورة المرتبطة',
+                'val' => self::primaryInvoiceReference($payments) ?? '—',
+                'val_mono' => true,
+                'val_small' => true,
+            ],
+            'advance' => [
+                'lbl' => 'Type',
+                'sub' => 'نوع الدفعة',
+                'val' => 'Advance / دفعة مقدمة',
+                'val_mono' => false,
+                'val_small' => false,
+            ],
+            default => self::infobarThirdMixed($payments),
+        };
+
+        return [
+            'receipt_date_lbl' => 'Receipt Date',
+            'receipt_date_sub' => 'تاريخ الإيصال',
+            'payment_date_lbl' => 'Payment Date',
+            'payment_date_sub' => 'تاريخ الدفع',
+            'receipt_no_lbl' => 'Receipt No.',
+            'receipt_no_sub' => 'رقم الإيصال',
+            'third' => $third,
+        ];
+    }
+
+    private static function primaryInvoiceReference(Collection $payments): ?string
+    {
+        foreach ($payments as $payment) {
+            if ($payment->invoice_id && $payment->invoice) {
+                $num = trim((string) ($payment->invoice->invoice_number ?? ''));
+
+                return $num !== '' ? $num : null;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{lbl: string, sub: string, val: string, val_mono: bool, val_small: bool}
+     */
+    private static function infobarThirdMixed(Collection $payments): array
+    {
+        $invoiceRef = self::primaryInvoiceReference($payments);
+        $hasAdvance = $payments->contains(static fn ($p) => ! $p->invoice_id);
+
+        if ($invoiceRef && ! $hasAdvance) {
+            return [
+                'lbl' => 'Invoice Ref.',
+                'sub' => 'رقم الفاتورة المرتبطة',
+                'val' => $invoiceRef,
+                'val_mono' => true,
+                'val_small' => true,
+            ];
+        }
+
+        return [
+            'lbl' => 'Type',
+            'sub' => 'نوع الدفعة',
+            'val' => ($hasAdvance && $invoiceRef)
+                ? 'Mixed / دفعات متعددة'
+                : ($hasAdvance ? 'Advance / دفعة مقدمة' : ($invoiceRef ?: 'Shipment / دفعة شحنة')),
+            'val_mono' => false,
+            'val_small' => false,
         ];
     }
 
@@ -299,6 +539,12 @@ class CashReceiptService
                 'kind_advance' => 'دفعة مقدمة — رصيد مدفوع مسبقاً',
                 'kind_shipment' => 'دفعة مرتبطة بشحنة',
                 'kind_mixed' => 'دفعات متعددة (مقدمة + شحنات)',
+                'kind_advance_en' => 'Advance Payment — Prepaid Credit',
+                'kind_advance_ar' => 'دفعة مقدمة — رصيد مدفوع مسبقاً',
+                'kind_shipment_en' => 'Shipment-Linked Payment',
+                'kind_shipment_ar' => 'دفعة مرتبطة بشحنة',
+                'kind_mixed_en' => 'Mixed Payments (Advance + Shipments)',
+                'kind_mixed_ar' => 'دفعات متعددة (مقدمة + شحنات)',
             ];
         }
 
@@ -325,7 +571,46 @@ class CashReceiptService
             'kind_advance' => 'Advance Payment — Prepaid Credit',
             'kind_shipment' => 'Shipment-Linked Payment',
             'kind_mixed' => 'Mixed Payments (Advance + Shipments)',
+            'kind_advance_en' => 'Advance Payment — Prepaid Credit',
+            'kind_advance_ar' => 'دفعة مقدمة — رصيد مدفوع مسبقاً',
+            'kind_shipment_en' => 'Shipment-Linked Payment',
+            'kind_shipment_ar' => 'دفعة مرتبطة بشحنة',
+            'kind_mixed_en' => 'Mixed Payments (Advance + Shipments)',
+            'kind_mixed_ar' => 'دفعات متعددة (مقدمة + شحنات)',
         ];
+    }
+
+    /**
+     * @return array{class: string, badge: string, ico_bg: string, en: string, ar: string, en_class: string}
+     */
+    public static function kindBandMeta(string $kind, array $labels): array
+    {
+        return match ($kind) {
+            'advance' => [
+                'class' => 'band-adv',
+                'badge' => 'ADVANCE',
+                'ico_bg' => '#E8790A',
+                'en' => $labels['kind_advance_en'],
+                'ar' => $labels['kind_advance_ar'],
+                'en_class' => 'b-adv-en',
+            ],
+            'shipment' => [
+                'class' => 'band-shp',
+                'badge' => 'SHIPMENT',
+                'ico_bg' => '#059669',
+                'en' => $labels['kind_shipment_en'],
+                'ar' => $labels['kind_shipment_ar'],
+                'en_class' => 'b-shp-en',
+            ],
+            default => [
+                'class' => 'band-mix',
+                'badge' => 'MIXED',
+                'ico_bg' => '#2563EB',
+                'en' => $labels['kind_mixed_en'],
+                'ar' => $labels['kind_mixed_ar'],
+                'en_class' => 'b-mix-en',
+            ],
+        };
     }
 
     /**
